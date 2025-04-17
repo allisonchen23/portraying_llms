@@ -246,14 +246,14 @@ Save responses to an FRQ
 def save_frq(df,
              q_id,
              addit_q_id,
-             frq_save_path):
+             frq_save_path,
+             print_responses=True):
     '''
     Given a dataframe (raw) save the condition, prolific ID and question ID columns
     '''
 
     frq_df = df.loc[:, [addit_q_id, 'PROLIFIC_PID', q_id]]
     frq_df = frq_df[~frq_df[q_id].isnull()]
-
     for _, row in frq_df.iterrows():
         utils.informal_log("{} [{}]: \n\t{}".format(
             row['PROLIFIC_PID'], row[addit_q_id], row[q_id]
