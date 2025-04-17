@@ -1,0 +1,100 @@
+library(lmerTest)
+library(lme4)
+library(dplyr)
+library(tidyr)
+library(emmeans)
+library(pbkrtest)
+emm_options(lmerTest.limit = 20000)
+emm_options(pbkrtest.limit = 20000)
+
+# Variables
+exp_name <- "pilot_v3_11142024"
+category <- "weisman"
+# exclude_k <- 40
+min_time <- "1.3333"
+manual_exclusions <- 0
+groupings <- "absolute_study4"
+save_txt <- TRUE
+# Parameters for custom factor analysis groupings
+custom_fa <- TRUE
+n_components <- 3
+
+# Don't modify after here
+save_dir <- sprintf("data/%s/min_time_%s/manual_%d/groupings_%s", exp_name, min_time, manual_exclusions, groupings)
+# If using custom factor analysis, correct path
+if (custom_fa == TRUE) {
+  category <- sprintf("%d_components", n_components)  
+  save_dir <- sprintf("%s/decomposition/factor_analysis/%d_components/data_fa", save_dir, n_components)
+}
+# save_dir <- "debug"
+save_results_path <- sprintf("%s/R_results/%s_results.txt", save_dir, category)
+
+
+# Below here should not change
+if (custom_fa == TRUE) {
+  df_path <- sprintf("%s/R_csvs/factor_analysis.csv", save_dir)
+} else {
+  df_path <- sprintf("%s/R_csvs/%s.csv", save_dir, category)
+}
+
+# items_path <- sprintf("%s/R_csvs/%s_items.txt", save_dir, category)
+
+# Load data frame & column items
+df <- read.csv(df_path)
+# cols <- readLines(items_path)
+
+# Convert condition to categorical factor
+df$condition <- factor(df$condition, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
+
+# Means for each condition using raw data (can print as sanity checks)
+# mean(apply(df[df$condition == "Baseline", cols], 1, mean, na.rm=FALSE))
+# mean(apply(df[df$condition == "Mechanistic", cols], 1, mean, na.rm=FALSE))
+# mean(apply(df[df$condition == "Functional", cols], 1, mean, na.rm=FALSE))
+# mean(apply(df[df$condition == "Intentional", cols], 1, mean, na.rm=FALSE))
+
+# Fit a mixed-effects regression model
+if (save_txt) {
+  sink(file = save_results_path)
+}
+model <- lmer(rating ~ condition * group + (1 | pid), data = df)
+cat("\n\n", "Model Summary:", "\n")
+summary(model)
+
+# Post-Hoc Tests
+# Usually need to do some sort of adjustment
+# TODO: search how pvalues are adjusted
+# This is the line that we would report values from
+
+# Estimated Marginal Means Model
+cat("\n\n", "EMMeans Analysis for conditions:", "\n")
+emmeans(model, list(pairwise ~ condition), adjust = "tukey")
+cat("\n\n", "EMMeans Analysis for conditions marginalized over category:", "\n")
+emmeans(model, list(pairwise ~ condition | group), adjust = "tukey")
+
+# EMMeans for group
+cat("\n", "EMMeans for group", "\n")
+emmeans(model, list(pairwise ~ group), adjust = "tukey")
+
+# Baseline model without interaction
+no_interaction_model <- lmer(rating ~ condition + group + (1 | pid), data = df)
+# cat("\n\n", "No Interaction Model Summary:", "\n")
+# summary(no_interaction_model)
+# Baseline model condition
+condition_model <- lmer(rating ~ condition + (1 | pid), data = df)
+
+# Baseline model with group only
+group_model <- lmer(rating ~ group + (1 | pid), data = df)
+
+# Null model without the condition
+null_model <- lmer(rating ~ (1 | pid), data = df)
+
+# Nested model comparison
+# cat("ANOVA with condition model", "\n")
+# anova(null_model, condition_model, no_interaction_model, model)
+
+cat("ANOVA with group model", "\n")
+anova(null_model, group_model, no_interaction_model, model)
+
+if (save_txt) {
+  sink(file = NULL)
+}
