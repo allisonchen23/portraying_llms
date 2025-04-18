@@ -394,14 +394,14 @@ def perform_exclusions(df,
 '''
 Functions for Mean Ratings & Statistics of Ratings
 '''
-def get_ms_mapping(items,
+def get_mc_mapping(items,
                    n_pages,
                    n_items_per_page,
                    q_id,
                    suffix=None,
                    columns=None):
     '''
-    Obtain mapping between data CSV column names and mental state attribution names
+    Obtain mapping between data CSV column names and mental capacity attribution names
 
     Arg(s):
         items : list[str]
@@ -451,7 +451,7 @@ def _add_groupings(rating_df,
     return rating_df
 
 def get_ratings(df,
-                ms_mapping,
+                mc_mapping,
                 groupings,
                 n_total=40,
                 save_dir=None,
@@ -462,7 +462,7 @@ def get_ratings(df,
     Arg(s):
         df : pd.DataFrame
             Raw Qualtrics Data
-        ms_mapping : dict[str: str] mental state mapping from Qualtrics name to our name
+        mc_mapping : dict[str: str] mental state mapping from Qualtrics name to our name
         groupings : dict[str : dict[str : list[str]]]
             outer keys: weisman/colombatto
             inner keys: category/condition
@@ -481,8 +481,8 @@ def get_ratings(df,
     Create rating DF for main analysis
     '''
     # Only keep columns that are mental states
-    rating_df = df[ms_mapping.keys()]
-    rating_df = rating_df.rename(columns=ms_mapping)
+    rating_df = df[mc_mapping.keys()]
+    rating_df = rating_df.rename(columns=mc_mapping)
         
     # Since 1, 4, & 7 options have text, convert them to just numbers
     # TODO: Remove this line due to a discrepancy between experimental and baseline
@@ -492,7 +492,7 @@ def get_ratings(df,
     rating_df = rating_df.map(lambda x: pd.to_numeric(x, errors='raise'))
     
     # Add mean rating for all items
-    items = ms_mapping.values()
+    items = mc_mapping.values()
     mean_ratings = rating_df[rating_df.columns.intersection(items)].mean(axis=1)
     rating_df['all_items'] = mean_ratings
     # print(len(mean_ratings))
@@ -606,7 +606,7 @@ def create_master_stats(stats_dfs,
     '''
     # If file exists, return it
     if save_dir is not None:
-        save_path = os.path.join(save_dir, 'all_ratings_stats.csv')
+        save_path = os.path.join(save_dir, 'all_conditions_ratings_stats.csv')
         if os.path.exists(save_path) and not overwrite:
             utils.informal_log("Master ratings exists at {}".format(save_path))
             return utils.read_file(save_path)
@@ -1394,7 +1394,7 @@ def prepare_R_df(rating_df,
                 save_path = os.path.join(save_dir, '{}.csv'.format(key))
                 utils.write_file(df, save_path, overwrite=overwrite)
     else: # Only save separate CSVs for each grouping method (Weisman, Colombatto)
-        
+        path_dictionary = {}
         for source, source_group in groupings.items():
             # Create item -> group mapping
             item_group_mapping = {}
@@ -1427,11 +1427,13 @@ def prepare_R_df(rating_df,
             )
             
             # Add group as a column
-            df.loc[:, 'group'] = df['item'].apply(lambda x : item_group_mapping[x])
+            df.loc[:, 'category'] = df['item'].apply(lambda x : item_group_mapping[x])
 
             save_path = os.path.join(save_dir, '{}.csv'.format(source))
             utils.write_file(df, save_path, overwrite=overwrite)
-            
+            path_dictionary[source] = save_path
+        path_dictionary_save_path = os.path.join(save_dir, 'paths.json')
+        utils.write_file(path_dictionary, path_dictionary_save_path, overwrite=overwrite)
 
 def copy_groupings(groupings,
                    all_items=None,
