@@ -1989,18 +1989,18 @@ def fa_plot(fa_groupings,
 Functions for analysis of additional DVs
 '''
 
-def get_additional_dvs(df,
-                       dv_mapping,
-                       likert_mapping,
-                       save_dir=None,
-                       overwrite=False):
+def get_attitudes(df,
+                  mapping,
+                  likert_mapping,
+                  save_dir=None,
+                  overwrite=False):
     '''
     Given raw data, return cleaned ratings for all participants. Additionally add ratings for each category dimension
 
     Arg(s):
         df : pd.DataFrame
             Raw Qualtrics Data
-        dv_mapping : dict[str: str] DV mapping from Qualtrics name to our name
+        mapping : dict[str: str] DV mapping from Qualtrics name to our name
 
         save_dir : str or None
         overwrite : bool
@@ -2008,25 +2008,25 @@ def get_additional_dvs(df,
     '''
     # If file exists, return it
     if save_dir is not None:
-        save_path = os.path.join(save_dir, 'additional_dvs.csv')
+        save_path = os.path.join(save_dir, 'attitudes.csv')
         if os.path.exists(save_path) and not overwrite:
-            utils.informal_log("Additional DVs exists at {}".format(save_path))
+            utils.informal_log("Attitudes CSV exists at {}".format(save_path))
             return utils.read_file(save_path)
     
-    # Collect columns that are in dv_mapping.keys()
-    dv_df = df[dv_mapping.keys()]
-    dv_df = dv_df.rename(columns=dv_mapping)
+    # Collect columns that are in mapping.keys()
+    attitudes_df = df[mapping.keys()]
+    attitudes_df = attitudes_df.rename(columns=mapping)
     # Map Likert scale to numbers
-    dv_df = dv_df.map(lambda x: likert_mapping[x])
+    attitudes_df = attitudes_df.map(lambda x: likert_mapping[x])
     
     # Add condition and participant ID
-    dv_df.loc[:, 'condition'] = df.loc[:, 'CONDITION']
-    dv_df.loc[:, 'participant_id'] = df.loc[:, 'PROLIFIC_PID']
+    attitudes_df.loc[:, 'condition'] = df.loc[:, 'CONDITION']
+    attitudes_df.loc[:, 'participant_id'] = df.loc[:, 'PROLIFIC_PID']
     
     if save_dir is not None:
-        utils.write_file(dv_df, save_path, overwrite=overwrite)
+        utils.write_file(attitudes_df, save_path, overwrite=overwrite)
     
-    return dv_df
+    return attitudes_df
 
 def dv_pointplot(dv_df,
                  dv_labels,  
@@ -2266,17 +2266,21 @@ def dv_bargraph(dv_df,
         plt.show()
         
         
-def save_r_format(dv_df,
-                  dv_columns,
+def save_r_format(attitudes_df,
+                  columns,
                   save_dir,
                   overwrite=False):
-    for dv_column in dv_columns:
-        save_path = os.path.join(save_dir, '{}.csv'.format(dv_column))
+    '''
+    Take the CSV for attitudes and save it in a format compatible with R
+    '''
+    for column in columns:
+        save_path = os.path.join(save_dir, '{}.csv'.format(column))
         if os.path.exists(save_path) and not overwrite:
             continue
 
-        r_df = dv_df.loc[:, (dv_column, 'condition')]
+        r_df = attitudes_df.loc[:, (column, 'condition')]
         utils.write_file(r_df, save_path, overwrite=overwrite)
+
 
 '''
 Code for identifying individuals with high leverage

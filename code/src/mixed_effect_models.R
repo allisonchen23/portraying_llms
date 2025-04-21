@@ -34,7 +34,6 @@ rating_analysis <- function(df_path,
   print(summary(model))
 
   # Post-Hoc Tests
-  # This is the line that we would report values from
   # Estimated Marginal Means Model
   cat("\n\n", "EMMeans Analysis for conditions:", "\n")
   print(emmeans(model, list(pairwise ~ condition), adjust = "tukey"))

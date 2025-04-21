@@ -46,51 +46,5 @@
             "paying attention",
             "imagining"
         ]
-    },
-    "experience-intelligence": {
-        "experience": [
-            "experiencing pleasure",
-            "admiring someone",
-            "experiencing fear",
-            "feeling happy",
-            "experiencing pride",
-            "feeling love",
-            "having desires",
-            "getting angry",
-            "feeling depressed",
-            "feeling embarrassed",
-            "getting hungry",
-            "feeling tired",
-            "feeling calm",
-            "feeling disrespected",
-            "experiencing joy",
-            "telling right from wrong",
-            "having intentions",
-            "exercising self-restraint",
-            "having a personality",
-            "imagining",
-            "seeing things",
-            "holding beliefs",
-            "having free will",
-            "perceiving depth",
-            "detecting sounds",
-            "understanding how others are feeling",
-            "being conscious",
-            "being self-aware"
-        ],
-        "intelligence": [
-            "considering choices",
-            "knowing things",
-            "making choices",
-            "having intelligence",
-            "communicating with others",
-            "remembering things",
-            "working toward a goal",
-            "reasoning about things",
-            "paying attention",
-            "having thoughts",
-            "recognizing someone",
-            "doing computations"
-        ]
     }
 }
