@@ -4,7 +4,7 @@ library(dplyr)
 library(tidyr)
 library(emmeans)
 
-# Variables 
+# Variables
 attitude_analysis <- function(attitude,
                               df_path,
                               save_dir,
