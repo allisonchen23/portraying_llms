@@ -2901,6 +2901,50 @@ Decomposition (NMF or Factor Loading)
 # '''
 # Visualize factor loadings
 # '''
+# Assign factor categories
+def assign_categories(df,
+                      item_colname,
+                      save_dir=None,
+                      overwrite=True):
+    if save_dir is not None:
+        save_path = os.path.join(save_dir, 'loading_w_factors.csv')
+        dict_save_path = os.path.join(save_dir, 'fa_groupings.json')
+        if os.path.exists(save_path) and \
+            dict_save_path and \
+            not overwrite:
+            utils.informal_log("Files exists in {}".format(save_dir))
+            return utils.read_file(save_path), utils.read_file(dict_save_path)
+        
+    items = df[item_colname]
+    factor_df = df.drop(columns=item_colname)
+    factor_df['factor'] = factor_df.idxmax(axis=1)
+    factor_df[item_colname] = items
+
+    groupings_dict = {}
+    for factor in sorted(factor_df['factor'].unique()):
+        row_items = factor_df[factor_df['factor'] == factor]['item'].to_list()
+        groupings_dict[factor] = row_items
+
+    if save_dir is not None:
+        utils.write_file(factor_df, save_path, overwrite=overwrite)
+        utils.write_file({'factor_analysis': groupings_dict}, dict_save_path, overwrite=overwrite)
+    return factor_df
+
+def sort_by_loadings(loading_df,
+                     factors,
+                     factor_colname='factor',
+                     item_colname='item'):
+    '''
+    Factors should actually be in REVERSE order because of how the heatmap presents items
+    '''
+    item_order = []
+    for factor in factors:
+        temp = loading_df[loading_df[factor_colname] == '{}'.format(factor)]
+        temp = temp.sort_values(by='{}'.format(factor), axis=0, ascending=True)
+        item_order += temp[item_colname].to_list()
+
+    return item_order
+
 def visualize_loadings(loading_df,
                        n_components,
                        orientation='vertical',

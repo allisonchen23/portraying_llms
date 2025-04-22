@@ -11,6 +11,20 @@ ensure_dir <- function(dirname) {
     cat("Directory already exists:", dirname, "\n")
   }
 }
+
+read_rating_df <- function(rating_df_path) {
+  # Read and normalize rating_df
+  # Process rating_df for K-fold analysis
+  rating_df <- read.csv("../analysis/mental_capacities/ratings.csv")
+  items <- readLines("../data/mental_capacity_items_R.txt")
+
+  rating_df <- rating_df[, items]
+  stopifnot(dim(rating_df) == c(470, 40))
+
+  normalized_ratings <- normalize_data(rating_df)
+  return(normalized_ratings)
+}
+
 normalize_data <- function(df) {
   # """
   # df : n_participants x n_items array
@@ -203,4 +217,61 @@ k_fold <- function(rating_df, k, max_n_factors,
     print(sprintf("Saving metric_df to %s", kfold_metrics_save_path))
   }
   return(metric_df)
+}
+
+data_driven_fa <- function(rating_df, n_factors, rotate, fm, scores, 
+                           save_dir = NULL, overwrite = FALSE) {
+  if (!is.null(save_dir)) {
+    loadings_save_path <- sprintf("%s/loadings.csv", save_dir)
+    factor_scores_save_path <- sprintf("%s/factor_scores_T.csv", save_dir)
+    predictions_save_path <- sprintf("%s/predictions_T.csv", save_dir)
+    metrics_save_path <- sprintf("%s/metrics.json", save_dir)
+    if (file.exists(loadings_save_path) &&
+          file.exists(factor_scores_save_path) &&
+          file.exists(predictions_save_path) &&
+          file.exists(metrics_save_path) &&
+          !overwrite) {
+      cat("Files already exist in :", save_dir, "\n")
+
+      return(list(
+        loadings = read.csv(loadings_save_path),
+        factor_scores = read.csv(factor_scores_save_path),
+        predictions = read.csv(predictions_save_path),
+        metrics = fromJSON(metrics_save_path)
+      ))
+    }
+  }
+  fa_results <- fa(
+    r = rating_df,
+    rotate = rotate,
+    fm = fm,
+    scores = scores,
+    nfactors = n_factors
+  )
+
+  normalized_ratings <- normalize_data(rating_df)
+  predictions <- fa_results$scores %*% t(fa_results$loadings)
+  bic <- fa_results[["BIC"]]
+  mse <- mean((normalized_ratings - predictions) ^2)
+  metrics <- list(
+    bic = bic,
+    mse = mse,
+    variance = fa_results$Vaccounted,
+    var_explained = fa_results$Vaccounted[3, n_factors]
+  )
+  # Save to files
+  if (!is.null(save_dir)) {
+    write.csv(fa_results$loadings, loadings_save_path)
+    write.csv(fa_results$scores, factor_scores_save_path)
+    write.csv(predictions, predictions_save_path)
+    write_json(metrics, metrics_save_path)
+    print(sprintf("Saved files in %s", save_dir))
+  }
+
+  return(list(
+    loadings = fa_results$loadings,
+    factor_scores = fa_results$scores,
+    predictions = predictions,
+    metrics = metrics
+  ))
 }
