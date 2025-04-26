@@ -2,9 +2,9 @@ from agreement.metrics import krippendorffs_alpha
 import functools
 # import math
 import matplotlib.pyplot as plt
-import matplotlib.transforms as transforms
+# import matplotlib.transforms as transforms
 import numpy as np
-import os, #sys
+import os
 import pandas as pd
 import pingouin as pg
 import scipy.stats as stats
@@ -2451,6 +2451,7 @@ def addit_dv_correlations(addit_dv_df,
     utils.informal_log("Bolding items whose p-values < {:.7f}".format(p_threshold))
     # Turn correlation data into an easy dictionary
     corr_dict = {}
+    print(labels)
     for idx1 in range(len(labels) - 1):
         for idx2 in range(idx1 + 1, len(labels)):
             dv1 = labels[idx1]

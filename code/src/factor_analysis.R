@@ -15,8 +15,8 @@ ensure_dir <- function(dirname) {
 read_rating_df <- function(rating_df_path) {
   # Read and normalize rating_df
   # Process rating_df for K-fold analysis
-  rating_df <- read.csv("../analysis/mental_capacities/ratings.csv")
-  items <- readLines("../data/mental_capacity_items_R.txt")
+  rating_df <- read.csv(rating_df_path)
+  items <- readLines("../data/files/mental_capacity_items_R.txt")
 
   rating_df <- rating_df[, items]
   stopifnot(dim(rating_df) == c(470, 40))
@@ -46,7 +46,7 @@ compute_factor_scores <- function(data, loadings) {
   # Utilize Thurstone method of computing factor scores
   #     * https://personality-project.org/r/psych/help/factor.scores.html
   #     * https://pmc.ncbi.nlm.nih.gov/articles/PMC3773873/ (Eq1)
-  
+
   # """
   data <- normalize_data(data) # n_participants x n_items
 
@@ -71,12 +71,12 @@ compute_factor_scores <- function(data, loadings) {
 #   if (!is.null(save_dir)) {
 #     metrics_save_path <- sprintf("%s/k_fold_overall_metrics.json", save_dir)
 #     fold_metrics_save_path <- sprintf("%s/fold_metrics.csv", save_dir)
-#     if (file.exists(metrics_save_path) && 
+#     if (file.exists(metrics_save_path) &&
 #       file.exists(fold_metrics_save_path) && !overwrite) {
 #       print(sprintf("File exists at %s", metrics_save_path))
 
 #       return(list(
-#         metrics = fromJSON(metrics_save_path), 
+#         metrics = fromJSON(metrics_save_path),
 #         fold_metrics = read.csv(fold_metrics_save_path)))
 #     }
 #   }
@@ -219,7 +219,7 @@ k_fold <- function(rating_df, k, max_n_factors,
   return(metric_df)
 }
 
-data_driven_fa <- function(rating_df, n_factors, rotate, fm, scores, 
+data_driven_fa <- function(rating_df, n_factors, rotate, fm, scores,
                            save_dir = NULL, overwrite = FALSE) {
   if (!is.null(save_dir)) {
     loadings_save_path <- sprintf("%s/loadings.csv", save_dir)
