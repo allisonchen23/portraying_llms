@@ -11,9 +11,9 @@ emm_options(pbkrtest.limit = 20000)
 rating_analysis <- function(df_path,
                             save_dir,
                             save_txt = TRUE,
-                            custom_fa = FALSE,
-                            n_components = 3) {
-  if (custom_fa == TRUE) {
+                            # custom_fa = FALSE,
+                            n_components = NULL) {
+  if (!is.null(n_components)) {
     category <- sprintf("%d_components", n_components)
   }
   else {
