@@ -98,94 +98,105 @@ item_level_rating_analysis <- function(df_path,
     sink(file = NULL)
   }
 }
-# # Variables
-# exp_name <- "pilot_v3_11142024"
-# category <- "weisman"
-# # exclude_k <- 40
-# min_time <- "1.3333"
-# manual_exclusions <- 0
-# categoryings <- "absolute_study4"
-# save_txt <- TRUE
-# # Parameters for custom factor analysis categoryings
-# custom_fa <- TRUE
-# n_components <- 3
 
-# # Don't modify after here
-# save_dir <- sprintf("data/%s/min_time_%s/manual_%d/categoryings_%s", exp_name, min_time, manual_exclusions, categoryings)
-# # If using custom factor analysis, correct path
-# if (custom_fa == TRUE) {
-#   category <- sprintf("%d_components", n_components)
-#   save_dir <- sprintf("%s/decomposition/factor_analysis/%d_components/data_fa", save_dir, n_components)
-# }
-# # save_dir <- "debug"
-# save_results_path <- sprintf("%s/R_results/%s_results.txt", save_dir, category)
+attitude_analysis <- function(attitude,
+                              df_path,
+                              save_dir,
+                              save_txt = TRUE) {
+  # Load data frame & column items
+  df <- read.csv(df_path)
 
+  # Make file to save results
+  save_results_path <- sprintf("%s/%s_results.txt", save_dir, attitude)
+  cat("Saving results to", save_results_path, "\n")
+  # Convert portrayal to categorical factor
+  df$portrayal <- factor(df$condition, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
 
-# # Below here should not change
-# if (custom_fa == TRUE) {
-#   df_path <- sprintf("%s/R_csvs/factor_analysis.csv", save_dir)
-# } else {
-#   df_path <- sprintf("%s/R_csvs/%s.csv", save_dir, category)
-# }
+  # Add column for participant ID
+  df$pid <- paste0("pid", seq_len(nrow(df)))
+  # Rename attitude column to "attitude"
+  names(df)[names(df) == attitude] <- "attitude"
 
-# # items_path <- sprintf("%s/R_csvs/%s_items.txt", save_dir, category)
+  if (save_txt) {
+    sink(file = save_results_path)
+  }
 
-# # Load data frame & column items
-# df <- read.csv(df_path)
-# # cols <- readLines(items_path)
+  # Fit a linear regression model
+  model <- lm(attitude ~ 1 + portrayal, data=df)
 
-# # Convert portrayal to categorical factor
-# df$portrayal <- factor(df$portrayal, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
+  cat("---***---","\n\n", attitude, "analysis: ", "\n")
+  cat("\n\n", "Model Summary:", "\n")
+  print(summary(model))
 
-# # Means for each portrayal using raw data (can print as sanity checks)
-# # mean(apply(df[df$portrayal == "Baseline", cols], 1, mean, na.rm=FALSE))
-# # mean(apply(df[df$portrayal == "Mechanistic", cols], 1, mean, na.rm=FALSE))
-# # mean(apply(df[df$portrayal == "Functional", cols], 1, mean, na.rm=FALSE))
-# # mean(apply(df[df$portrayal == "Intentional", cols], 1, mean, na.rm=FALSE))
+  # Post-Hoc Tests
+  # This is the line that we would report values from
+  cat("\n\n", "EMMeans Analysis:", "\n")
+  # Estimated Marginal Means Model
+  print(emmeans(model, list(pairwise ~ portrayal), adjust = "tukey"))
 
-# # Fit a mixed-effects regression model
-# if (save_txt) {
-#   sink(file = save_results_path)
-# }
-# model <- lmer(rating ~ portrayal * category + (1 | pid), data = df)
-# cat("\n\n", "Model Summary:", "\n")
-# summary(model)
+  # Baseline model without the portrayal
+  baseline_model <- lm(attitude ~ 1, data = df)
+  cat("\n\n", "Anova Analysis:", "\n")
+  print(anova(baseline_model, model))
 
-# # Post-Hoc Tests
-# # Usually need to do some sort of adjustment
-# # TODO: search how pvalues are adjusted
-# # This is the line that we would report values from
+  # Redirect outputs back to console
+  if (save_txt) {
+    sink(file = NULL)
+  }
+}
 
-# # Estimated Marginal Means Model
-# cat("\n\n", "EMMeans Analysis for portrayals:", "\n")
-# emmeans(model, list(pairwise ~ portrayal), adjust = "tukey")
-# cat("\n\n", "EMMeans Analysis for portrayals marginalized over category:", "\n")
-# emmeans(model, list(pairwise ~ portrayal | category), adjust = "tukey")
+mentioned_items_analysis <- function(df_path,
+                                     save_dir,
+                                     save_txt = TRUE) {
+  # Load data frame & column items
+  df <- read.csv(df_path)
 
-# # EMMeans for category
-# cat("\n", "EMMeans for category", "\n")
-# emmeans(model, list(pairwise ~ category), adjust = "tukey")
+  # Make file to save results
+  save_results_path <- sprintf("%s/results.txt", save_dir)
+  cat("Saving results to", save_results_path, "\n")
+  # Convert portrayal to categorical factor
+  df$portrayal <- factor(df$condition, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
+  df$category <- factor(df$category, levels = c("unmentioned", "mentioned"))
 
-# # Baseline model without interaction
-# no_interaction_model <- lmer(rating ~ portrayal + category + (1 | pid), data = df)
-# # cat("\n\n", "No Interaction Model Summary:", "\n")
-# # summary(no_interaction_model)
-# # Baseline model portrayal
-# portrayal_model <- lmer(rating ~ portrayal + (1 | pid), data = df)
+  # Select only baseline and intentional conditions
+  df <- df[df$portrayal %in% c("Baseline", "Intentional"), ]
 
-# # Baseline model with category only
-# category_model <- lmer(rating ~ category + (1 | pid), data = df)
+  if (save_txt) {
+    sink(file = save_results_path)
+  }
 
-# # Null model without the portrayal
-# null_model <- lmer(rating ~ (1 | pid), data = df)
+  # Define mixed effects model
+  model <- lmer(rating ~ portrayal * category + (1 | pid), data = df)
+  cat("\n\n", "Model Summary:", "\n")
+  print(summary(model))
 
-# # Nested model comparison
-# # cat("ANOVA with portrayal model", "\n")
-# # anova(null_model, portrayal_model, no_interaction_model, model)
+  # Estimated Marginal Means Model
+  cat("\n\n", "EMMeans Analysis for portrayal:", "\n")
+  print(emmeans(model, list(pairwise ~ portrayal), adjust = "tukey"))
+  cat("\n\n", "EMMeans Analysis for portrayal marginalized over category:", "\n")
+  print(emmeans(model, list(pairwise ~ portrayal | category), adjust = "tukey"))
+  # EMMeans for category
+  cat("\n", "EMMeans for category", "\n")
+  print(emmeans(model, list(pairwise ~ category), adjust = "tukey"))
+  # EMMeans for interaction
+  # cat("\n\n", "EMMeans Analysis for interaction:", "\n")
+  # emmeans(model, list(pairwise ~ portrayal * category), adjust = "tukey")
 
-# cat("ANOVA with category model", "\n")
-# anova(null_model, category_model, no_interaction_model, model)
+  # Baseline model without interaction
+  no_interaction_model <- lmer(rating ~ portrayal + category + (1 | pid), data = df)
 
-# if (save_txt) {
-#   sink(file = NULL)
-# }
+  # Baseline model with category only
+  category_model <- lmer(rating ~ category + (1 | pid), data = df)
+
+  # Null model without the portrayal condition
+  null_model <- lmer(rating ~ (1 | pid), data = df)
+
+  # Nested model comparison
+
+  cat("ANOVA with category model", "\n")
+  print(anova(null_model, category_model, no_interaction_model, model))
+
+  if (save_txt) {
+    sink(file = NULL)
+  }
+}

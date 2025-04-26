@@ -977,8 +977,8 @@ def read_emmeans_marginalized_result(results_path,
             csv_save_path = os.path.join(save_dir, "item_means.csv")
         elif grouping_source == "factor_analysis":
             csv_save_path = os.path.join(save_dir, 'fa.csv')
-        elif grouping_source == "semantic":
-            csv_save_path = os.path.join(save_dir, "semantic_analysis.csv")
+        elif grouping_source == "mentioned":
+            csv_save_path = os.path.join(save_dir, "mentioned.csv")
         else:
             raise ValueError("grouping_source {} not supported".format(grouping_source))
         if os.path.exists(csv_save_path) and not overwrite:
