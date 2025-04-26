@@ -1,10 +1,10 @@
 from agreement.metrics import krippendorffs_alpha
 import functools
-import math
+# import math
 import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
 import numpy as np
-import os, sys
+import os, #sys
 import pandas as pd
 import pingouin as pg
 import scipy.stats as stats
@@ -621,213 +621,213 @@ def create_master_stats(stats_dfs,
 '''
 Functions for plotting bar graphs
 '''
-def jitter_dots(dots):
-    '''
-    Arg(s):
-        dots : return object of plt.scatter()
-    '''
-    offsets = dots.get_offsets()
-    jittered_offsets = offsets
-    # only jitter in the x-direction
-    jittered_offsets[:, 0] += np.random.uniform(-0.05, 0.05, offsets.shape[0])
-    dots.set_offsets(jittered_offsets)
+# def jitter_dots(dots):
+#     '''
+#     Arg(s):
+#         dots : return object of plt.scatter()
+#     '''
+#     offsets = dots.get_offsets()
+#     jittered_offsets = offsets
+#     # only jitter in the x-direction
+#     jittered_offsets[:, 0] += np.random.uniform(-0.05, 0.05, offsets.shape[0])
+#     dots.set_offsets(jittered_offsets)
 
-    return dots
+#     return dots
 
-def jitter1D(x,
-           y,
-           jitter_x=True,
-           jitter_y=False):
-    '''
-    Given 1D arrays x, y apply jitter
-    '''
-    assert len(x) == len(y)
-    if jitter_x:
-        x += np.random.uniform(-0.05, 0.05, x.shape)
-    if jitter_y:
-        y += np.random.uniform(-0.05, 0.05, y.shape)
-    return x, y
+# def jitter1D(x,
+#            y,
+#            jitter_x=True,
+#            jitter_y=False):
+#     '''
+#     Given 1D arrays x, y apply jitter
+#     '''
+#     assert len(x) == len(y)
+#     if jitter_x:
+#         x += np.random.uniform(-0.05, 0.05, x.shape)
+#     if jitter_y:
+#         y += np.random.uniform(-0.05, 0.05, y.shape)
+#     return x, y
 
-def _get_errors(df,
-                error_dim,
-                dim_axis_dict):
-    assert error_dim in dim_axis_dict
-    axis = dim_axis_dict[error_dim]
-    if axis is None:
-        error_df = df.to_numpy()
-    else:
-        error_df = np.nanmean(df.to_numpy(), axis=axis)
-    std = np.nanstd(error_df)
-    sem = stats.sem(error_df, axis=None, nan_policy='omit')
-    ci = stats.t.interval(
-        confidence=0.95,
-        df=len(error_df)-1,
-        loc=np.mean(error_df),
-        scale=sem)
+# def _get_errors(df,
+#                 error_dim,
+#                 dim_axis_dict):
+#     assert error_dim in dim_axis_dict
+#     axis = dim_axis_dict[error_dim]
+#     if axis is None:
+#         error_df = df.to_numpy()
+#     else:
+#         error_df = np.nanmean(df.to_numpy(), axis=axis)
+#     std = np.nanstd(error_df)
+#     sem = stats.sem(error_df, axis=None, nan_policy='omit')
+#     ci = stats.t.interval(
+#         confidence=0.95,
+#         df=len(error_df)-1,
+#         loc=np.mean(error_df),
+#         scale=sem)
 
-    assert np.abs(np.mean(ci) - np.mean(error_df)) < 1e-5
+#     assert np.abs(np.mean(ci) - np.mean(error_df)) < 1e-5
 
-    return float(std), float(sem), ci
+#     return float(std), float(sem), ci
 
-def prep_graph_data(rating_df,
-                    groupings,
-                    grouping_source,
-                    all_items,
-                    ci_dim,
-                    jitter_dim,
-                    conditions,
-                    # Axes labels
-                    title=None,
-                    save_dir=None,
-                    overwrite=True,
-                    debug=False):
-    '''
-    Prepare data from rating DF to be used for grouped_bar_graphs
-    '''
-    assert ci_dim in ['participants', 'items', 'both']
-    assert jitter_dim in ['participants', 'items', 'both', None]
+# def prep_graph_data(rating_df,
+#                     groupings,
+#                     grouping_source,
+#                     all_items,
+#                     ci_dim,
+#                     jitter_dim,
+#                     conditions,
+#                     # Axes labels
+#                     title=None,
+#                     save_dir=None,
+#                     overwrite=True,
+#                     debug=False):
+#     '''
+#     Prepare data from rating DF to be used for grouped_bar_graphs
+#     '''
+#     assert ci_dim in ['participants', 'items', 'both']
+#     assert jitter_dim in ['participants', 'items', 'both', None]
 
-    groups = list(groupings.keys())
-    participant_conditions = rating_df['condition']
-    # condition_set = ['Baseline', 'Mechanistic', 'Functional', 'Intentional'] # list(set(participant_conditions))
+#     groups = list(groupings.keys())
+#     participant_conditions = rating_df['condition']
+#     # condition_set = ['Baseline', 'Mechanistic', 'Functional', 'Intentional'] # list(set(participant_conditions))
 
-    graph_data = []  # n_conditions x n_groups array
-    dim_axis_dict = {
-        'participants': 1,
-        'items': 0,
-        'both': None
-    }
-    errors = []  # n_conditions x n_groups array for CI error bars
-    jitter_ys = []  # (n_conditions * n_groups) x variable_length array
-    group_means = []  # n_groups array
+#     graph_data = []  # n_conditions x n_groups array
+#     dim_axis_dict = {
+#         'participants': 1,
+#         'items': 0,
+#         'both': None
+#     }
+#     errors = []  # n_conditions x n_groups array for CI error bars
+#     jitter_ys = []  # (n_conditions * n_groups) x variable_length array
+#     group_means = []  # n_groups array
 
-    results = {}
-    if all_items is not None:
-        condition_only_results = {
-            'means': [],
-            'errors': []
-        }
-        # Select only columns that are rating items
-        rating_df = rating_df[rating_df.columns.intersection(all_items)]
+#     results = {}
+#     if all_items is not None:
+#         condition_only_results = {
+#             'means': [],
+#             'errors': []
+#         }
+#         # Select only columns that are rating items
+#         rating_df = rating_df[rating_df.columns.intersection(all_items)]
 
-    for condition in conditions:
-        # Select  only rows that belong to this condition
-        condition_df = rating_df[participant_conditions == condition] # Select rows
-        condition_results = {}
-        if all_items is not None:
+#     for condition in conditions:
+#         # Select  only rows that belong to this condition
+#         condition_df = rating_df[participant_conditions == condition] # Select rows
+#         condition_results = {}
+#         if all_items is not None:
 
-            # Get mean, errors across all categories for this condition
-            c_mean = np.nanmean(condition_df.to_numpy())
-            std, sem, ci = _get_errors(
-                df=condition_df,
-                error_dim=ci_dim,
-                dim_axis_dict=dim_axis_dict)
-            ci_error = (ci[1] - ci[0]) / 2
+#             # Get mean, errors across all categories for this condition
+#             c_mean = np.nanmean(condition_df.to_numpy())
+#             std, sem, ci = _get_errors(
+#                 df=condition_df,
+#                 error_dim=ci_dim,
+#                 dim_axis_dict=dim_axis_dict)
+#             ci_error = (ci[1] - ci[0]) / 2
 
-            condition_only_results[condition] = {
-                'mean': c_mean,
-                'std_{}'.format(ci_dim): std,
-                'sem_{}'.format(ci_dim): sem,
-                'ci_{}'.format(ci_dim): ci,
-                'ci_error_{}'.format(ci_dim): ci_error
-            }
-            condition_only_results['means'].append([c_mean])
-            condition_only_results['errors'].append([ci_error])
+#             condition_only_results[condition] = {
+#                 'mean': c_mean,
+#                 'std_{}'.format(ci_dim): std,
+#                 'sem_{}'.format(ci_dim): sem,
+#                 'ci_{}'.format(ci_dim): ci,
+#                 'ci_error_{}'.format(ci_dim): ci_error
+#             }
+#             condition_only_results['means'].append([c_mean])
+#             condition_only_results['errors'].append([ci_error])
 
-        # Get means, errors for each category in this condition
-        condition_means = []
-        condition_errors = []
-        condition_jitters = []
+#         # Get means, errors for each category in this condition
+#         condition_means = []
+#         condition_errors = []
+#         condition_jitters = []
 
 
-        for group_name, group_mental_states in groupings.items():
-            condition_group_results = {}
-            condition_group_df = condition_df[rating_df.columns.intersection(group_mental_states)]
-            # Check that the number of columns in resulting df is same as number of items in group
-            assert len(group_mental_states) == len(condition_group_df.columns), "Expected {} items in group, only filtered out {} in DF".format(
-                len(group_mental_states), len(condition_group_df.columns))
+#         for group_name, group_mental_states in groupings.items():
+#             condition_group_results = {}
+#             condition_group_df = condition_df[rating_df.columns.intersection(group_mental_states)]
+#             # Check that the number of columns in resulting df is same as number of items in group
+#             assert len(group_mental_states) == len(condition_group_df.columns), "Expected {} items in group, only filtered out {} in DF".format(
+#                 len(group_mental_states), len(condition_group_df.columns))
 
-            # condition_means.append(condition_group_df.mean(axis=None, skipna=True))
-            mean = np.nanmean(condition_group_df.to_numpy())
-            condition_means.append(mean)
-            condition_group_results['mean'] = mean
+#             # condition_means.append(condition_group_df.mean(axis=None, skipna=True))
+#             mean = np.nanmean(condition_group_df.to_numpy())
+#             condition_means.append(mean)
+#             condition_group_results['mean'] = mean
 
-            # Calculate 95% CI
-            std, sem, ci = _get_errors(
-                df=condition_group_df,
-                error_dim=ci_dim,
-                dim_axis_dict=dim_axis_dict)
-            condition_group_results['std_{}'.format(ci_dim)] = std
-            condition_group_results['sem_{}'.format(ci_dim)] = sem
-            condition_group_results['ci_{}'.format(ci_dim)] = ci
+#             # Calculate 95% CI
+#             std, sem, ci = _get_errors(
+#                 df=condition_group_df,
+#                 error_dim=ci_dim,
+#                 dim_axis_dict=dim_axis_dict)
+#             condition_group_results['std_{}'.format(ci_dim)] = std
+#             condition_group_results['sem_{}'.format(ci_dim)] = sem
+#             condition_group_results['ci_{}'.format(ci_dim)] = ci
 
-            # Calculate CI error amount
-            ci_error = (ci[1] - ci[0]) / 2
-            condition_errors.append(ci_error)
+#             # Calculate CI error amount
+#             ci_error = (ci[1] - ci[0]) / 2
+#             condition_errors.append(ci_error)
 
-            if jitter_dim is None:
-                pass
-            elif jitter_dim == 'participants':
-                condition_jitters.append(np.nanmean(condition_group_df.to_numpy(), axis=1).tolist())
+#             if jitter_dim is None:
+#                 pass
+#             elif jitter_dim == 'participants':
+#                 condition_jitters.append(np.nanmean(condition_group_df.to_numpy(), axis=1).tolist())
 
-            elif jitter_dim == 'items':
-                condition_jitters.append(np.nanmean(condition_group_df.to_numpy(), axis=0).tolist())
+#             elif jitter_dim == 'items':
+#                 condition_jitters.append(np.nanmean(condition_group_df.to_numpy(), axis=0).tolist())
 
-            elif jitter_dim == 'both':
-                condition_jitters.append(condition_group_df.to_numpy().flatten().tolist())
+#             elif jitter_dim == 'both':
+#                 condition_jitters.append(condition_group_df.to_numpy().flatten().tolist())
 
-            condition_results[group_name] = condition_group_results
+#             condition_results[group_name] = condition_group_results
 
-        # Append to outer lists
-        graph_data.append(condition_means)
-        errors.append(condition_errors)
-        jitter_ys.append(condition_jitters)
+#         # Append to outer lists
+#         graph_data.append(condition_means)
+#         errors.append(condition_errors)
+#         jitter_ys.append(condition_jitters)
 
-        results[condition] = condition_results
+#         results[condition] = condition_results
 
-    # Calculate means for each group
-    results['group_means'] = {}
-    group_items = []
-    for group_name, group_mental_states in groupings.items():
-        # Select columns that belong to this group
-        group_df = rating_df[rating_df.columns.intersection(group_mental_states)]
-        # Check that the number of columns in resulting df is same as number of items in group
-        assert len(group_mental_states) == len(group_df.columns), "Expected {} items in group, only filtered out {} in DF".format(
-            len(group_mental_states), len(group_df.columns))
-        # Calculate the mean across conditions for this group
-        group_mean = np.nanmean(group_df.to_numpy())
-        group_means.append(group_mean)
+#     # Calculate means for each group
+#     results['group_means'] = {}
+#     group_items = []
+#     for group_name, group_mental_states in groupings.items():
+#         # Select columns that belong to this group
+#         group_df = rating_df[rating_df.columns.intersection(group_mental_states)]
+#         # Check that the number of columns in resulting df is same as number of items in group
+#         assert len(group_mental_states) == len(group_df.columns), "Expected {} items in group, only filtered out {} in DF".format(
+#             len(group_mental_states), len(group_df.columns))
+#         # Calculate the mean across conditions for this group
+#         group_mean = np.nanmean(group_df.to_numpy())
+#         group_means.append(group_mean)
 
-        results['group_means'][group_name] = group_mean
-        group_items.append(group_df.columns.to_list())
+#         results['group_means'][group_name] = group_mean
+#         group_items.append(group_df.columns.to_list())
 
-    # Add to results object
-    results['means'] = graph_data
-    results['errors'] = errors
-    results['jitter_ys'] = jitter_ys
-    results['group_items'] = group_items
+#     # Add to results object
+#     results['means'] = graph_data
+#     results['errors'] = errors
+#     results['jitter_ys'] = jitter_ys
+#     results['group_items'] = group_items
 
-    # Save JSON results
-    if save_dir is not None:
-        if debug:
-            save_dir = os.path.join('debug', save_dir)
+#     # Save JSON results
+#     if save_dir is not None:
+#         if debug:
+#             save_dir = os.path.join('debug', save_dir)
 
-        results_save_path = os.path.join(save_dir, 'group_graph_{}-ci_{}_data.json'.format(
-            grouping_source, ci_dim
-        ))
+#         results_save_path = os.path.join(save_dir, 'group_graph_{}-ci_{}_data.json'.format(
+#             grouping_source, ci_dim
+#         ))
 
-        utils.write_file(results, results_save_path, overwrite=overwrite)
-        if all_items is not None:
-            condition_only_results_save_path = os.path.join(
-                save_dir,
-                'graph_condition_data.json'
-            )
-            utils.write_file(condition_only_results, condition_only_results_save_path, overwrite=overwrite)
+#         utils.write_file(results, results_save_path, overwrite=overwrite)
+#         if all_items is not None:
+#             condition_only_results_save_path = os.path.join(
+#                 save_dir,
+#                 'graph_condition_data.json'
+#             )
+#             utils.write_file(condition_only_results, condition_only_results_save_path, overwrite=overwrite)
 
-    if all_items is not None:
-        return results, condition_only_results
-    else:
-        return results
+#     if all_items is not None:
+#         return results, condition_only_results
+#     else:
+#         return results
 
 '''
 Code for formatting data from EMMeans
@@ -1449,194 +1449,194 @@ def copy_groupings(groupings,
 '''
 Functions for visualizing single items
 '''
-def prepare_data_individual_items(df,
-                                  groupings,
-                                  significant_items=[]):
-    '''
-    Given df of ratings, return "unpivoted" DF with columns: condition, participant_id, item, and rating
+# def prepare_data_individual_items(df,
+#                                   groupings,
+#                                   significant_items=[]):
+#     '''
+#     Given df of ratings, return "unpivoted" DF with columns: condition, participant_id, item, and rating
 
-    Arg(s):
-        df : pd.DataFrame of ratings
-        groupings : dict[str : dict[str : str]]
-            Outer dict is for Weisman/Colombatto, inner is for body/heart/mind/experience/intelligence -> items
-        significant_items : list[str]
-            list of items to mark with *
-    '''
-    # Remove columns weisman_X, and colombatto_X
-    drop_list = ['weisman_', 'colombatto_']
-    cols_to_drop = [col for col in df.columns if any(x in col for x in drop_list)]
-    df = df.drop(columns=cols_to_drop)
-
-
-
-    # Set which columns to "keep" (id_vars) and which to unpivot (value_vars)
-    value_vars = list(df.columns)
-    id_vars = ['condition', 'participant_id']
-    for id_var in id_vars:
-        value_vars.remove(id_var)
-
-    # Unpivot
-    return_df = df.melt(
-        id_vars=id_vars,
-        value_vars=value_vars,
-        var_name='item',
-        value_name='rating')
-
-    # Assert number of rows is correct
-    assert len(return_df) == len(df) * 40, "Expected 40 items X {} participants = {} rows, have {} rows in total".format(
-        len(df), len(df) * 40, len(return_df))
-
-    # Add the colombatto and weisman groupings columns
-    for grouping_source, grouping in groupings.items():
-        group_mapping = {}
-        for category_name, category_mental_states in grouping.items():
-            for mental_state in category_mental_states:
-                group_mapping[mental_state] = category_name
-        return_df[grouping_source] = return_df['item'].map(group_mapping)
-
-    # Rename columns with items that are significant
-    if significant_items is not None and len(significant_items) > 0:
-        rename_mapping = {}
-        for item in value_vars:
-            if item in significant_items:
-                rename_mapping[item] = "{}*".format(item)
-            else:
-                rename_mapping[item] = item
-
-        return_df['item'] = return_df['item'].map(rename_mapping)
-        # df = df.rename(columns=rename_mapping)
-    return return_df
-
-def get_y_order(groupings,
-                sort_columns,
-                ascending,
-                rating_stats_df,
-                significant_items=[]):
-    '''
-    Sort rows based on sort_columns and return sorted item column
-
-    Arg(s):
-        groupings : dict[str : dict[str : list[str]]]
-        sort_columns : list[str]
-            which columns to sort by
-        ascending : list[bool]
-            whether each sorting step should be ascending or descending order
-        rating_stats_df : pd.DataFrame
-            DF of mean/std of each item in each condition
-
-    Returns:
-        list[str] : list of sorted items
-
-    '''
-    # Remove columns weisman_X, and colombatto_X
-    drop_list = ['weisman_', 'colombatto_']
-    rating_stats_df = rating_stats_df[~rating_stats_df['mental_state'].str.contains('|'.join(drop_list))]
-    assert len(rating_stats_df) == 40
-
-    # Add the colombatto and weisman groupings
-    for grouping_source, grouping in groupings.items():
-        group_mapping = {}
-        for category_name, category_mental_states in grouping.items():
-            for mental_state in category_mental_states:
-                group_mapping[mental_state] = category_name
-        rating_stats_df.loc[:, grouping_source] = rating_stats_df.loc[:, 'mental_state'].map(group_mapping)
-
-    # Sort based on sort_columns
-    rating_stats_df = rating_stats_df.sort_values(by=sort_columns, ascending=ascending)
-
-    # Get sorted list of items
-    y_order = rating_stats_df['mental_state']
-    if significant_items is not None and len(significant_items) > 0:
-        rename_mapping = {}
-        for item in y_order:
-            if item in significant_items:
-                rename_mapping[item] = "{}*".format(item)
-            else:
-                rename_mapping[item] = item
-
-        y_order = y_order.map(rename_mapping)
-    return y_order
+#     Arg(s):
+#         df : pd.DataFrame of ratings
+#         groupings : dict[str : dict[str : str]]
+#             Outer dict is for Weisman/Colombatto, inner is for body/heart/mind/experience/intelligence -> items
+#         significant_items : list[str]
+#             list of items to mark with *
+#     '''
+#     # Remove columns weisman_X, and colombatto_X
+#     drop_list = ['weisman_', 'colombatto_']
+#     cols_to_drop = [col for col in df.columns if any(x in col for x in drop_list)]
+#     df = df.drop(columns=cols_to_drop)
 
 
-def plot_individual_items(df,
-                          group_column,
-                          y_order,
-                          conditions,
-                          save_dir=None,
-                          save_ext='pdf'):
-    '''
-    Plots items in separate axes side by side
-    Arg(s):
-        df : pd.DataFrame with columns ['item', 'rating', 'participant_id', 'condition', 'weisman', 'colombatto']
-        group_column : str of which grouping to use
-        y_order : list[str] ordered list for y-axis
-    '''
-    plt.clf()
 
-    # Set color scheme
-    color_keys = df[group_column].unique()
-    palette = sns.color_palette("Set2", len(color_keys))
-    color_map = dict(zip(color_keys, palette))
+#     # Set which columns to "keep" (id_vars) and which to unpivot (value_vars)
+#     value_vars = list(df.columns)
+#     id_vars = ['condition', 'participant_id']
+#     for id_var in id_vars:
+#         value_vars.remove(id_var)
 
-    graph = sns.FacetGrid(
-        df,
-        col='condition',
-        col_order=conditions,
-        col_wrap=4,
-        height=15,
-        aspect=0.35,
-        sharex=True,
-        sharey=False)
+#     # Unpivot
+#     return_df = df.melt(
+#         id_vars=id_vars,
+#         value_vars=value_vars,
+#         var_name='item',
+#         value_name='rating')
 
-    graph.map_dataframe(
-        sns.pointplot,
-        x="rating",
-        y="item",
-        errorbar="ci",
-        capsize=0.0,
-        hue=group_column,
-        order=y_order,
-        palette=color_map,
-        linestyle='none',
-        dodge=True)
+#     # Assert number of rows is correct
+#     assert len(return_df) == len(df) * 40, "Expected 40 items X {} participants = {} rows, have {} rows in total".format(
+#         len(df), len(df) * 40, len(return_df))
 
-    # Get figure and axes for titles and labeling
-    axes = graph.axes
-    fig = graph.figure
+#     # Add the colombatto and weisman groupings columns
+#     for grouping_source, grouping in groupings.items():
+#         group_mapping = {}
+#         for category_name, category_mental_states in grouping.items():
+#             for mental_state in category_mental_states:
+#                 group_mapping[mental_state] = category_name
+#         return_df[grouping_source] = return_df['item'].map(group_mapping)
 
-    # Set/Unset labeling for specific axes
-    for idx, ax in enumerate(axes):
-        # Remove y-labels
-        if idx > 0:
-            ax.set_yticklabels([])
-        else:
-            ax.tick_params(
-                axis='y',
-                labelsize=16
-            )
-            ax.set_ylabel("")
+#     # Rename columns with items that are significant
+#     if significant_items is not None and len(significant_items) > 0:
+#         rename_mapping = {}
+#         for item in value_vars:
+#             if item in significant_items:
+#                 rename_mapping[item] = "{}*".format(item)
+#             else:
+#                 rename_mapping[item] = item
 
-        # Set axis titles based on condition
-        ax.set_title("{}".format(conditions[idx]), fontsize=20)
+#         return_df['item'] = return_df['item'].map(rename_mapping)
+#         # df = df.rename(columns=rename_mapping)
+#     return return_df
 
-        # Remove xlabel for each graph
-        ax.set_xlabel("")
-        ax.tick_params(axis='x', labelsize=16)
-        ax.set_xticks([1, 2, 3, 4, 5, 6, 7])
+# def get_y_order(groupings,
+#                 sort_columns,
+#                 ascending,
+#                 rating_stats_df,
+#                 significant_items=[]):
+#     '''
+#     Sort rows based on sort_columns and return sorted item column
 
-        # Set gridlines
-        axes[idx] = ax.grid(True)
+#     Arg(s):
+#         groupings : dict[str : dict[str : list[str]]]
+#         sort_columns : list[str]
+#             which columns to sort by
+#         ascending : list[bool]
+#             whether each sorting step should be ascending or descending order
+#         rating_stats_df : pd.DataFrame
+#             DF of mean/std of each item in each condition
 
-    # Set global x-axis label
-    fig.supxlabel("Mean Rating", fontsize=20, x=0.6)
-    plt.tight_layout()
+#     Returns:
+#         list[str] : list of sorted items
 
-    if save_dir is not None:
-        save_path = os.path.join(save_dir, 'single_items_{}.{}'.format(group_column, save_ext))
-        plt.savefig(save_path)
-        utils.informal_log("Saved single item visualization to {}".format(save_path))
+#     '''
+#     # Remove columns weisman_X, and colombatto_X
+#     drop_list = ['weisman_', 'colombatto_']
+#     rating_stats_df = rating_stats_df[~rating_stats_df['mental_state'].str.contains('|'.join(drop_list))]
+#     assert len(rating_stats_df) == 40
 
-    plt.show()
+#     # Add the colombatto and weisman groupings
+#     for grouping_source, grouping in groupings.items():
+#         group_mapping = {}
+#         for category_name, category_mental_states in grouping.items():
+#             for mental_state in category_mental_states:
+#                 group_mapping[mental_state] = category_name
+#         rating_stats_df.loc[:, grouping_source] = rating_stats_df.loc[:, 'mental_state'].map(group_mapping)
+
+#     # Sort based on sort_columns
+#     rating_stats_df = rating_stats_df.sort_values(by=sort_columns, ascending=ascending)
+
+#     # Get sorted list of items
+#     y_order = rating_stats_df['mental_state']
+#     if significant_items is not None and len(significant_items) > 0:
+#         rename_mapping = {}
+#         for item in y_order:
+#             if item in significant_items:
+#                 rename_mapping[item] = "{}*".format(item)
+#             else:
+#                 rename_mapping[item] = item
+
+#         y_order = y_order.map(rename_mapping)
+#     return y_order
+
+
+# def plot_individual_items(df,
+#                           group_column,
+#                           y_order,
+#                           conditions,
+#                           save_dir=None,
+#                           save_ext='pdf'):
+#     '''
+#     Plots items in separate axes side by side
+#     Arg(s):
+#         df : pd.DataFrame with columns ['item', 'rating', 'participant_id', 'condition', 'weisman', 'colombatto']
+#         group_column : str of which grouping to use
+#         y_order : list[str] ordered list for y-axis
+#     '''
+#     plt.clf()
+
+#     # Set color scheme
+#     color_keys = df[group_column].unique()
+#     palette = sns.color_palette("Set2", len(color_keys))
+#     color_map = dict(zip(color_keys, palette))
+
+#     graph = sns.FacetGrid(
+#         df,
+#         col='condition',
+#         col_order=conditions,
+#         col_wrap=4,
+#         height=15,
+#         aspect=0.35,
+#         sharex=True,
+#         sharey=False)
+
+#     graph.map_dataframe(
+#         sns.pointplot,
+#         x="rating",
+#         y="item",
+#         errorbar="ci",
+#         capsize=0.0,
+#         hue=group_column,
+#         order=y_order,
+#         palette=color_map,
+#         linestyle='none',
+#         dodge=True)
+
+#     # Get figure and axes for titles and labeling
+#     axes = graph.axes
+#     fig = graph.figure
+
+#     # Set/Unset labeling for specific axes
+#     for idx, ax in enumerate(axes):
+#         # Remove y-labels
+#         if idx > 0:
+#             ax.set_yticklabels([])
+#         else:
+#             ax.tick_params(
+#                 axis='y',
+#                 labelsize=16
+#             )
+#             ax.set_ylabel("")
+
+#         # Set axis titles based on condition
+#         ax.set_title("{}".format(conditions[idx]), fontsize=20)
+
+#         # Remove xlabel for each graph
+#         ax.set_xlabel("")
+#         ax.tick_params(axis='x', labelsize=16)
+#         ax.set_xticks([1, 2, 3, 4, 5, 6, 7])
+
+#         # Set gridlines
+#         axes[idx] = ax.grid(True)
+
+#     # Set global x-axis label
+#     fig.supxlabel("Mean Rating", fontsize=20, x=0.6)
+#     plt.tight_layout()
+
+#     if save_dir is not None:
+#         save_path = os.path.join(save_dir, 'single_items_{}.{}'.format(group_column, save_ext))
+#         plt.savefig(save_path)
+#         utils.informal_log("Saved single item visualization to {}".format(save_path))
+
+#     plt.show()
 
 def _format_and_pivot_emmeans_df(emmeans_df,
                                  target_column):
@@ -1675,288 +1675,288 @@ def _format_and_pivot_emmeans_df(emmeans_df,
         pivot_df = emmeans_df
     return pivot_df
 
-def plot_individual_items_single_axis(emmeans_df,
+# def plot_individual_items_single_axis(emmeans_df,
 
-                                      item_group_dict,
-                                      conditions,
-                                      # Sort ascending (False for horiztonal pointplot, True for vertical)
-                                      ascending=False,
-                                      # Figure parameters
-                                      fig=None,
-                                      ax=None,
-                                      orientation='horizontal',
-                                      marker_size=5,
-                                      alpha=1.0,
-                                      color_idxs=None,
-                                      # Here, x as if was horizontal
-                                      xtick_labels=[],
-                                      xlabel=None,
-                                      font_size_dict={},
-                                      fig_size=None,
-                                      save_path=None,
-                                      show=False):
-    '''
-    Arg(s):
-        emmeans_df : pd.DataFrame from analysis.read_emmeans_marginalized_result() for single items results
-        item_group_dict : dict[str] : str
-            item -> category name dictionary
-        conditions : list[str]
-            list of conditions in order
-    '''
+#                                       item_group_dict,
+#                                       conditions,
+#                                       # Sort ascending (False for horiztonal pointplot, True for vertical)
+#                                       ascending=False,
+#                                       # Figure parameters
+#                                       fig=None,
+#                                       ax=None,
+#                                       orientation='horizontal',
+#                                       marker_size=5,
+#                                       alpha=1.0,
+#                                       color_idxs=None,
+#                                       # Here, x as if was horizontal
+#                                       xtick_labels=[],
+#                                       xlabel=None,
+#                                       font_size_dict={},
+#                                       fig_size=None,
+#                                       save_path=None,
+#                                       show=False):
+#     '''
+#     Arg(s):
+#         emmeans_df : pd.DataFrame from analysis.read_emmeans_marginalized_result() for single items results
+#         item_group_dict : dict[str] : str
+#             item -> category name dictionary
+#         conditions : list[str]
+#             list of conditions in order
+#     '''
 
-    pivot_df = _format_and_pivot_emmeans_df(
-        emmeans_df=emmeans_df,
-        target_column='item')
-    # Sort by 1) category and 2) increasing mean-Baseline value
-    pivot_df['category'] = pivot_df['item'].apply(lambda x : item_group_dict[x])
-    pivot_df = pivot_df.sort_values(by=['category', 'mean-Baseline'], ascending=ascending)
-    ytick_labels_list = pivot_df['item'].to_list()
+#     pivot_df = _format_and_pivot_emmeans_df(
+#         emmeans_df=emmeans_df,
+#         target_column='item')
+#     # Sort by 1) category and 2) increasing mean-Baseline value
+#     pivot_df['category'] = pivot_df['item'].apply(lambda x : item_group_dict[x])
+#     pivot_df = pivot_df.sort_values(by=['category', 'mean-Baseline'], ascending=ascending)
+#     ytick_labels_list = pivot_df['item'].to_list()
 
-    means = pivot_df[["mean-{}".format(condition) for condition in conditions]].to_numpy().T
-    errors = pivot_df[["ci_error-{}".format(condition) for condition in conditions]].to_numpy().T
+#     means = pivot_df[["mean-{}".format(condition) for condition in conditions]].to_numpy().T
+#     errors = pivot_df[["ci_error-{}".format(condition) for condition in conditions]].to_numpy().T
 
-    if orientation == 'horizontal':
-        ylim = (-1, len(pivot_df))
-        ytick_labels_list = pivot_df['item'].to_list()
-        fig, ax = visualizations.pointplot(
-            fig=fig,
-            ax=ax,
-            means=means,
-            errors=errors,
-            orientation=orientation,
-            labels=conditions,
-            ytick_labels=ytick_labels_list,
-            xtick_labels=xtick_labels,
-            xlabel=xlabel,
-            ylabel=None, #'Mental State Items',
-            title=None, #'Mental State Attributions of LLMs',
-            ylim=ylim,
-            fig_size=fig_size,
-            show_grid=True,
-            alpha=alpha,
-            marker_size=marker_size,
-            color_idxs=color_idxs,
-            font_size_dict=font_size_dict,
-            save_path=None,
-            show=False)
-    elif orientation == 'vertical':
-        xtick_labels_list = pivot_df['item'].to_list()
-        ytick_labels = xtick_labels
-        ylabel = xlabel
-        xlim = (-1, len(pivot_df))
-        fig, ax = visualizations.pointplot(
-            fig=fig,
-            ax=ax,
-            means=means,
-            errors=errors,
-            spacing_multiplier=0.12,
-            orientation=orientation,
-            labels=conditions,
-            xtick_labels=xtick_labels_list,
-            # xtick_label_rotation=70,
-            # xlabel='Mental State Items',
-            ytick_labels=ytick_labels,
-            yticks=ytick_labels,
-            ylabel=ylabel,
-            ylim=(0.5, 7.5),
-            # title='Mental State Attributions of LLMs',
-            xlim=xlim,
-            fig_size=fig_size,
-            show_grid=True,
-            alpha=alpha,
-            marker_size=marker_size,
-            color_idxs=color_idxs,
-            font_size_dict=font_size_dict,
-            save_path=None,
-            show=False)
+#     if orientation == 'horizontal':
+#         ylim = (-1, len(pivot_df))
+#         ytick_labels_list = pivot_df['item'].to_list()
+#         fig, ax = visualizations.pointplot(
+#             fig=fig,
+#             ax=ax,
+#             means=means,
+#             errors=errors,
+#             orientation=orientation,
+#             labels=conditions,
+#             ytick_labels=ytick_labels_list,
+#             xtick_labels=xtick_labels,
+#             xlabel=xlabel,
+#             ylabel=None, #'Mental State Items',
+#             title=None, #'Mental State Attributions of LLMs',
+#             ylim=ylim,
+#             fig_size=fig_size,
+#             show_grid=True,
+#             alpha=alpha,
+#             marker_size=marker_size,
+#             color_idxs=color_idxs,
+#             font_size_dict=font_size_dict,
+#             save_path=None,
+#             show=False)
+#     elif orientation == 'vertical':
+#         xtick_labels_list = pivot_df['item'].to_list()
+#         ytick_labels = xtick_labels
+#         ylabel = xlabel
+#         xlim = (-1, len(pivot_df))
+#         fig, ax = visualizations.pointplot(
+#             fig=fig,
+#             ax=ax,
+#             means=means,
+#             errors=errors,
+#             spacing_multiplier=0.12,
+#             orientation=orientation,
+#             labels=conditions,
+#             xtick_labels=xtick_labels_list,
+#             # xtick_label_rotation=70,
+#             # xlabel='Mental State Items',
+#             ytick_labels=ytick_labels,
+#             yticks=ytick_labels,
+#             ylabel=ylabel,
+#             ylim=(0.5, 7.5),
+#             # title='Mental State Attributions of LLMs',
+#             xlim=xlim,
+#             fig_size=fig_size,
+#             show_grid=True,
+#             alpha=alpha,
+#             marker_size=marker_size,
+#             color_idxs=color_idxs,
+#             font_size_dict=font_size_dict,
+#             save_path=None,
+#             show=False)
 
-        # ax.set_ylim((0.5, 7.5))
-        # ax.set_yticks(range(1, 8))
-        # Rotate x-axis labels
-        for label in ax.get_xticklabels():
-            label.set_rotation(40)  # Rotate labels
-            label.set_horizontalalignment('right')  # Align to the right
-            label.set_transform(label.get_transform() + transforms.ScaledTranslation(20 / 72, 0, fig.dpi_scale_trans))
+#         # ax.set_ylim((0.5, 7.5))
+#         # ax.set_yticks(range(1, 8))
+#         # Rotate x-axis labels
+#         for label in ax.get_xticklabels():
+#             label.set_rotation(40)  # Rotate labels
+#             label.set_horizontalalignment('right')  # Align to the right
+#             label.set_transform(label.get_transform() + transforms.ScaledTranslation(20 / 72, 0, fig.dpi_scale_trans))
 
-            # label.set_position((label.get_position()[0] +5.4, label.get_position()[1]))  # Offset down by 0.1 units
-        plt.tight_layout()
-    else:
-        raise ValueError("Orientation {} not supported".format(orientation))
+#             # label.set_position((label.get_position()[0] +5.4, label.get_position()[1]))  # Offset down by 0.1 units
+#         plt.tight_layout()
+#     else:
+#         raise ValueError("Orientation {} not supported".format(orientation))
 
-    # Color ytick_labels based on category
-    if orientation == 'horizontal':
-        tick_labels = ax.get_yticklabels()
-    else:
-        tick_labels = ax.get_xticklabels()
-    for label in tick_labels:
-        label_text = label.get_text()
-        if item_group_dict[label_text] == "body" or item_group_dict[label_text] == "experience":
-            label.set_color("#D81B60")
-        elif item_group_dict[label_text] == "heart" or item_group_dict[label_text] == "intelligence":
-            label.set_color("#1E88E5")
-        else:
-            label.set_color("#004D40")
+#     # Color ytick_labels based on category
+#     if orientation == 'horizontal':
+#         tick_labels = ax.get_yticklabels()
+#     else:
+#         tick_labels = ax.get_xticklabels()
+#     for label in tick_labels:
+#         label_text = label.get_text()
+#         if item_group_dict[label_text] == "body" or item_group_dict[label_text] == "experience":
+#             label.set_color("#D81B60")
+#         elif item_group_dict[label_text] == "heart" or item_group_dict[label_text] == "intelligence":
+#             label.set_color("#1E88E5")
+#         else:
+#             label.set_color("#004D40")
 
-    if save_path is not None:
-        plt.savefig(save_path)
-        utils.informal_log("Saved figure to {}".format(save_path))
+#     if save_path is not None:
+#         plt.savefig(save_path)
+#         utils.informal_log("Saved figure to {}".format(save_path))
 
-    if show:
-        plt.show()
+#     if show:
+#         plt.show()
 
-    return fig, ax, ytick_labels_list
+#     return fig, ax, ytick_labels_list
 
-def plot_category_items_single_axis(emmeans_df,
-                                    conditions,
-                                    # Figure parameters
-                                    fig=None,
-                                    ax=None,
-                                    alpha=1.0,
-                                    color_idxs=None,
-                                    fig_size=None,
-                                    marker_size=6,
-                                    save_path=None,
-                                    show=False):
-    '''
-    Used for plotting category means of items
-    '''
-    pivot_df = _format_and_pivot_emmeans_df(
-        emmeans_df=emmeans_df,
-        target_column='group'
-    )
+# def plot_category_items_single_axis(emmeans_df,
+#                                     conditions,
+#                                     # Figure parameters
+#                                     fig=None,
+#                                     ax=None,
+#                                     alpha=1.0,
+#                                     color_idxs=None,
+#                                     fig_size=None,
+#                                     marker_size=6,
+#                                     save_path=None,
+#                                     show=False):
+#     '''
+#     Used for plotting category means of items
+#     '''
+#     pivot_df = _format_and_pivot_emmeans_df(
+#         emmeans_df=emmeans_df,
+#         target_column='group'
+#     )
 
-    # Sort by descending so it appears (top) body, heart, mind (bottom)
-    pivot_df = pivot_df.sort_values(by=['group'], ascending=False)
+#     # Sort by descending so it appears (top) body, heart, mind (bottom)
+#     pivot_df = pivot_df.sort_values(by=['group'], ascending=False)
 
-    means = pivot_df[["mean-{}".format(condition) for condition in conditions]].to_numpy().T
-    errors = pivot_df[["ci_error-{}".format(condition) for condition in conditions]].to_numpy().T
-
-
-    # Set y-limit
-    ylim = (-1, len(pivot_df))
-
-    fig, ax = visualizations.pointplot(
-        fig=fig,
-        ax=ax,
-        means=means,
-        errors=errors,
-        orientation='horizontal',
-        marker_size=marker_size,
-        # labels=conditions,
-        ytick_labels=pivot_df['group'].to_list(),
-        xtick_labels=[i for i in range(1, 8)],
-        xlabel='Rating (1-7)',
-        ylabel='Item Categories',
-        ylim=ylim,
-        # title='Mental State Attributions of LLMs',
-        fig_size=fig_size,
-        show_grid=True,
-        alpha=alpha,
-        color_idxs=color_idxs,
-        save_path=None,
-        show=False)
-
-    # Color ytick_labels based on category
-    ytick_labels = ax.get_yticklabels()
-    for label in ytick_labels:
-        label_text = label.get_text()
-        if label_text == "body" or label_text == "experience":
-            label.set_color("#D81B60")
-        elif label_text == "heart" or label_text == "intelligence":
-            label.set_color("#1E88E5")
-        else:
-            label.set_color("#004D40")
-
-    # Save and show
-    if save_path is not None:
-        plt.savefig(save_path)
-        utils.informal_log("Saved figure to {}".format(save_path))
-
-    if show:
-        plt.show()
-
-    return fig, ax
+#     means = pivot_df[["mean-{}".format(condition) for condition in conditions]].to_numpy().T
+#     errors = pivot_df[["ci_error-{}".format(condition) for condition in conditions]].to_numpy().T
 
 
-def fa_plot(fa_groupings,
-            r_results_path,
-            plot_type='pointplot',
-            orientation='vertical',
-            graph_save_dir=None,
-            save_ext='pdf',
-            show=True):
-    groups = list(fa_groupings['factor_analysis'].keys())
-    conditions = ['Baseline', 'Mechanistic', 'Functional', 'Intentional']
+#     # Set y-limit
+#     ylim = (-1, len(pivot_df))
 
-    utils.ensure_dir(graph_save_dir)
-    emmeans_graph_data, emmeans_df = read_emmeans_marginalized_result(
-        results_path=r_results_path,
-        grouping_source="factor_analysis",
-        conditions=['Baseline', 'Mechanistic', 'Functional', 'Intentional'],
-        marginalized_var="group",
-        marginalized_var_values=groups,
-        save_dir=graph_save_dir,
-        overwrite=True
-    )
-    if plot_type == 'bargraph':
-        grouped_bar_graphs(
-            groups=groups,
-            grouping_source='{}_components'.format(len(groups)),
-            conditions=['Baseline', 'Mechanistic', 'Functional', 'Intentional'],
-            graph_data=emmeans_graph_data,
-            ci_dim='both',
-            jitter_dim=None,
-            line_start=None,
-            save_dir=graph_save_dir,
-            save_ext='pdf')
-    elif plot_type == 'pointplot':
-        # Data prep copied from analysis.ipynb > Graph from EMMeans Output > Category Level Pointplots (separate by condition)
-        pivot_df = _format_and_pivot_emmeans_df(
-            emmeans_df=emmeans_df,
-            target_column='group'
-        )
-        means = pivot_df[["mean-{}".format(condition) for condition in conditions]].to_numpy().T
-        errors = pivot_df[["ci_error-{}".format(condition) for condition in conditions]].to_numpy().T
+#     fig, ax = visualizations.pointplot(
+#         fig=fig,
+#         ax=ax,
+#         means=means,
+#         errors=errors,
+#         orientation='horizontal',
+#         marker_size=marker_size,
+#         # labels=conditions,
+#         ytick_labels=pivot_df['group'].to_list(),
+#         xtick_labels=[i for i in range(1, 8)],
+#         xlabel='Rating (1-7)',
+#         ylabel='Item Categories',
+#         ylim=ylim,
+#         # title='Mental State Attributions of LLMs',
+#         fig_size=fig_size,
+#         show_grid=True,
+#         alpha=alpha,
+#         color_idxs=color_idxs,
+#         save_path=None,
+#         show=False)
 
-        if orientation == 'horizontal':
-            ytick_labels = [label.capitalize() for label in pivot_df['group'].to_list()]
-            ylabel = 'Item Categories'
-            xtick_labels = [i for i in range(1, 8)]
-            xlabel = 'Rating (1-7)'
-            fig_size = (7, 3)
-        else:
-            xtick_labels = [label.capitalize() for label in pivot_df['group'].to_list()]
-            xlabel = 'Item Categories'
-            ytick_labels = [i for i in range(1, 8)]
-            ylabel = 'Rating (1-7)'
-            fig_size = (3, 4)
-            xlim = (-0.5, 2.5)
-            ylim = None
-        if graph_save_dir is not None:
-            fig_save_path = os.path.join(
-                graph_save_dir,
-                'fa_category_graph_{}.{}'.format(orientation, save_ext))
-        else:
-            fig_save_path = None
-        fig, ax = visualizations.pointplot(
-            means=means,
-            errors=errors,
-            orientation=orientation,
-            labels=conditions,
-            ytick_labels=ytick_labels,
-            xtick_labels=xtick_labels,
-            xlabel=xlabel,
-            ylabel=ylabel,
-            ylim=ylim,
-            xlim=xlim,
-            title='Mental State Attributions of LLMs',
-            legend_loc='upper right',
-            fig_size=fig_size,
-            color_idxs=[7, 1, 2, 4], # Copied from analysis.ipynb > Make save_dirs
-            marker_size=10,
-            show_grid=True,
-            save_path=fig_save_path,
-            show=show)
+#     # Color ytick_labels based on category
+#     ytick_labels = ax.get_yticklabels()
+#     for label in ytick_labels:
+#         label_text = label.get_text()
+#         if label_text == "body" or label_text == "experience":
+#             label.set_color("#D81B60")
+#         elif label_text == "heart" or label_text == "intelligence":
+#             label.set_color("#1E88E5")
+#         else:
+#             label.set_color("#004D40")
+
+#     # Save and show
+#     if save_path is not None:
+#         plt.savefig(save_path)
+#         utils.informal_log("Saved figure to {}".format(save_path))
+
+#     if show:
+#         plt.show()
+
+#     return fig, ax
+
+
+# def fa_plot(fa_groupings,
+#             r_results_path,
+#             plot_type='pointplot',
+#             orientation='vertical',
+#             graph_save_dir=None,
+#             save_ext='pdf',
+#             show=True):
+#     groups = list(fa_groupings['factor_analysis'].keys())
+#     conditions = ['Baseline', 'Mechanistic', 'Functional', 'Intentional']
+
+#     utils.ensure_dir(graph_save_dir)
+#     emmeans_graph_data, emmeans_df = read_emmeans_marginalized_result(
+#         results_path=r_results_path,
+#         grouping_source="factor_analysis",
+#         conditions=['Baseline', 'Mechanistic', 'Functional', 'Intentional'],
+#         marginalized_var="group",
+#         marginalized_var_values=groups,
+#         save_dir=graph_save_dir,
+#         overwrite=True
+#     )
+#     if plot_type == 'bargraph':
+#         grouped_bar_graphs(
+#             groups=groups,
+#             grouping_source='{}_components'.format(len(groups)),
+#             conditions=['Baseline', 'Mechanistic', 'Functional', 'Intentional'],
+#             graph_data=emmeans_graph_data,
+#             ci_dim='both',
+#             jitter_dim=None,
+#             line_start=None,
+#             save_dir=graph_save_dir,
+#             save_ext='pdf')
+#     elif plot_type == 'pointplot':
+#         # Data prep copied from analysis.ipynb > Graph from EMMeans Output > Category Level Pointplots (separate by condition)
+#         pivot_df = _format_and_pivot_emmeans_df(
+#             emmeans_df=emmeans_df,
+#             target_column='group'
+#         )
+#         means = pivot_df[["mean-{}".format(condition) for condition in conditions]].to_numpy().T
+#         errors = pivot_df[["ci_error-{}".format(condition) for condition in conditions]].to_numpy().T
+
+#         if orientation == 'horizontal':
+#             ytick_labels = [label.capitalize() for label in pivot_df['group'].to_list()]
+#             ylabel = 'Item Categories'
+#             xtick_labels = [i for i in range(1, 8)]
+#             xlabel = 'Rating (1-7)'
+#             fig_size = (7, 3)
+#         else:
+#             xtick_labels = [label.capitalize() for label in pivot_df['group'].to_list()]
+#             xlabel = 'Item Categories'
+#             ytick_labels = [i for i in range(1, 8)]
+#             ylabel = 'Rating (1-7)'
+#             fig_size = (3, 4)
+#             xlim = (-0.5, 2.5)
+#             ylim = None
+#         if graph_save_dir is not None:
+#             fig_save_path = os.path.join(
+#                 graph_save_dir,
+#                 'fa_category_graph_{}.{}'.format(orientation, save_ext))
+#         else:
+#             fig_save_path = None
+#         fig, ax = visualizations.pointplot(
+#             means=means,
+#             errors=errors,
+#             orientation=orientation,
+#             labels=conditions,
+#             ytick_labels=ytick_labels,
+#             xtick_labels=xtick_labels,
+#             xlabel=xlabel,
+#             ylabel=ylabel,
+#             ylim=ylim,
+#             xlim=xlim,
+#             title='Mental State Attributions of LLMs',
+#             legend_loc='upper right',
+#             fig_size=fig_size,
+#             color_idxs=[7, 1, 2, 4], # Copied from analysis.ipynb > Make save_dirs
+#             marker_size=10,
+#             show_grid=True,
+#             save_path=fig_save_path,
+#             show=show)
 '''
 Functions for analysis of additional DVs
 '''
@@ -2791,3 +2791,223 @@ def visualize_loadings(loading_df,
 
     plt.show()
     plt.clf()
+
+'''
+Graphing Helper functions for figures.ipynb
+'''
+# Helper Functions
+def overall_pointplot(r_results_path,
+                      grouping_source,
+                      conditions,
+                      emmeans_graph_save_dir,
+                      condition_color_idxs,
+                      orientation,
+                      marker_size=6,
+                      spacing_multiplier=0.1,
+                      label=True,
+                      show_xlabel=True,
+                      show_ylabel=True,
+                      show_legend=False,
+                      title=None,
+                      fig=None,
+                      ax=None,
+                      font_size_dict={},
+                      save_path=None,
+                      save_ext='pdf',
+                      show=False):
+    '''
+    Plot mean over all 40 mental capacity items
+    '''
+    # Parse EMMeans output from R & pivot data
+    emmeans_graph_data, emmeans_df = read_emmeans_single_variable(
+        results_path=r_results_path,
+        grouping_source=grouping_source,
+        variable_name='portrayal',
+        variable_values=conditions,
+        save_dir=emmeans_graph_save_dir,
+        overwrite=False)
+
+    emmeans_df = _format_and_pivot_emmeans_df(
+        emmeans_df=emmeans_df,
+        target_column=None
+    )
+
+    # Extract means and CI errors
+    means = emmeans_df['mean']
+    means = [[mean] for mean in means]
+
+    errors = emmeans_df['ci_error'].to_numpy()
+    errors = [[error] for error in errors]
+
+    # Formatting for horizontal vs vertical graphs (based on direction of error bars)
+    if orientation == 'horizontal':
+        ytick_labels = ['']
+        if show_ylabel:
+            ylabel = 'Overall Item Mean'
+        else:
+            ylabel = None
+        xtick_labels = [i for i in range(1, 8)]
+        if show_xlabel:
+            xlabel = 'Rating (1-7)'
+        else:
+            xlabel=None
+        fig_size = (7, 3)
+    else:
+        xtick_labels = ['Overall']
+        if show_xlabel:
+            if fig is None and ax is None:
+                xlabel = 'Overall Item Mean'
+            else:
+                xlabel = 'Overall'
+        else:
+            xlabel = None
+        ytick_labels = [i for i in range(1, 8)]
+        if show_ylabel:
+            ylabel = 'Rating (1-7)'
+        else:
+            ylabel = None
+        fig_size = (2, 4)
+        xlim = (-1, 1)
+
+    # Label conditions
+    if label:
+        labels = conditions
+    else:
+        labels = None
+
+    fig, ax = visualizations.pointplot(
+        fig=fig,
+        ax=ax,
+        means=means,
+        errors=errors,
+        orientation=orientation,
+        labels=labels,
+        show_legend=show_legend,
+        ytick_labels=ytick_labels,
+        yticks=ytick_labels,
+        ylim=(0.5, 7.5),
+        xtick_labels=xtick_labels,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        xlim=xlim,
+        title=title,
+        legend_loc='upper left',
+        fig_size=fig_size,
+        color_idxs=condition_color_idxs,
+        marker_size=marker_size,
+        show_grid=True,
+        spacing_multiplier=spacing_multiplier,
+        font_size_dict=font_size_dict,
+        save_path=save_path,
+        show=show)
+    return fig, ax
+
+def category_level_pointplot(r_results_path,
+                      grouping_source,
+                      groups,
+                      conditions,
+                      emmeans_graph_save_dir,
+                      condition_color_idxs,
+                      orientation,
+                      show_xlabels,
+                      show_ylabels,
+                      marker_size,
+                      label=False,
+                      show_legend=True,
+                      title=None,
+                      fig=None,
+                      ax=None,
+                      font_size_dict={},
+                      show=False,
+                      save_path=None):
+    '''
+    Plots means of each category
+    '''
+
+    # Parse EMMeans output from R & pivot data
+    emmeans_graph_data, emmeans_df = read_emmeans_marginalized_result(
+        results_path=r_results_path,
+        grouping_source=grouping_source,
+        conditions=conditions,
+        marginalized_var='category',
+        marginalized_var_values=groups,
+        save_dir=emmeans_graph_save_dir,
+        overwrite=True
+    )
+    pivot_df = _format_and_pivot_emmeans_df(
+        emmeans_df=emmeans_df,
+        target_column='category'
+    )
+
+    # Extract means and 95% confidence intervals
+    means = pivot_df[["mean-{}".format(condition) for condition in conditions]].to_numpy().T
+    errors = pivot_df[["ci_error-{}".format(condition) for condition in conditions]].to_numpy().T
+
+    # Formatting for horizontal vs vertical graphs (based on direction of error bars)
+    if orientation == 'horizontal':
+        if show_ylabels:
+            ytick_labels = [label.capitalize() for label in pivot_df['category'].to_list()]
+            ylabel = 'Item Categories'
+        else:
+            ytick_labels = None
+            ylabel = None
+
+        if show_xlabels:
+            xtick_labels = [i for i in range(1, 8)]
+            xlabel = 'Rating (1-7)'
+        else:
+            xtick_labels = None
+            xlabel = None
+        fig_size = (7, 3)
+    else:
+        xtick_labels = [label.capitalize() for label in pivot_df['category'].to_list()]
+        if show_xlabels:
+            if fig is None and ax is None:
+                xlabel = 'Item Categories'
+            else:
+                xlabel = 'Item Categories\n(b)'
+        else:
+            xlabel = None
+
+        if show_ylabels:
+            ytick_labels = [i for i in range(1, 8)]
+            ylabel = 'Rating (1-7)'
+        else:
+            ytick_labels = None
+            ylabel = None
+
+        fig_size = (3, 4)
+        xlim = (-0.5, 2.5)
+
+    # Label with conditions or not
+    if label:
+        labels = conditions
+    else:
+        labels = None
+
+    fig, ax = visualizations.pointplot(
+        fig=fig,
+        ax=ax,
+        means=means,
+        errors=errors,
+        orientation=orientation,
+        labels=labels,
+        show_legend=show_legend,
+        ytick_labels=ytick_labels,
+        yticks=ytick_labels,
+        ylim=(0.5, 7.5),
+        ylabel=ylabel,
+        xtick_labels=xtick_labels,
+        xlabel=xlabel,
+        xlim=xlim,
+        title=title,
+        legend_loc='upper left',
+        fig_size=fig_size,
+        color_idxs=condition_color_idxs,
+        marker_size=marker_size,
+        font_size_dict=font_size_dict,
+        show_grid=True,
+        save_path=save_path,
+        show=show)
+
+    return fig, ax
