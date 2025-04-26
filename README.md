@@ -1,5 +1,11 @@
 # Portraying Large Language Models as Machines, Tools, or Companions Affects What Mental Capacities Humans Attribute to Them
 
+Allison Chen<sup>1</sup>, Sunnie S. Y. Kim<sup>1</sup>, Amaya Dharmasiri<sup>1</sup>, Olga Russakovsky<sup>1</sup>, Judith E. Fan<sup>2</sup>
+
+<sup>1</sup> Department of Computer Science, Princeton University
+
+<sup>2</sup> Department of Psychology, Stanford University
+
 ![Teaser photo of experimental setup. Participants are assigned to one of four conditions where they watch videos portraying LLMs as machines, tools, or companions, or watch no video. Then all participants take the same mental capacity attribution survey](./teaser.png)
 ## Abstract
 
