@@ -9,9 +9,9 @@ import pandas as pd
 import pingouin as pg
 import scipy.stats as stats
 import seaborn as sns
-from sklearn.decomposition import PCA, FactorAnalysis, NMF
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+# from sklearn.decomposition import PCA, FactorAnalysis, NMF
+# from sklearn.linear_model import LinearRegression
+# from sklearn.metrics import mean_squared_error
 from statsmodels.stats import inter_rater as irr
 from sklearn.preprocessing import MinMaxScaler
 # import statsmodels.api
@@ -209,6 +209,7 @@ def get_demographics(df,
     if save_dir is not None:
         save_path = os.path.join(save_dir, 'demographics.csv')
         if os.path.exists(save_path) and not overwrite:
+            utils.informal_log("Demographics exists at {}".format(save_path))
             return utils.read_file(save_path)
 
     demographics_dfs = []
@@ -238,6 +239,7 @@ def get_demographics(df,
     demographics_df = pd.concat(demographics_dfs)
 
     if save_dir is not None:
+        utils.informal_log("Saving demographics to {}".format(save_path))
         utils.write_file(demographics_df, save_path, overwrite=overwrite)
 
 '''
@@ -317,20 +319,19 @@ def _verify_post_attention_check(df):
 
     return df[pass_ac]
 
-def _verify_insurvey_attention_check(df):
-    '''
-    Given dataframe, return rows that pass in survey attention check
-    '''
-    ac_response = df['41_Q35']
-    pass_ac = ac_response.str.contains('4')
+# def _verify_insurvey_attention_check(df):
+#     '''
+#     Given dataframe, return rows that pass in survey attention check
+#     '''
+#     ac_response = df['41_Q35']
+#     pass_ac = ac_response.str.contains('4')
 
-    return df[pass_ac]
+#     return df[pass_ac]
 
 def perform_exclusions(df,
                        # Exclusion parameters
                        min_survey_time,
                        min_median_per_page_time,
-                    #    max_median_diff,
                        post_attention_check=True,
                        manual_exclusions=None):
     '''
@@ -355,15 +356,6 @@ def perform_exclusions(df,
             len(df), min_median_per_page_time))
     else:
         utils.informal_log("No exclusions for minimum median amount of time")
-
-    # Keep rows that have at most a difference between max and median time per page of max_median_diff
-    # if max_median_diff is not None:
-    #     select = df['max_time_per_survey_page'] - df['median_time_per_survey_page'] <= max_median_diff
-    #     df = df[select]
-    #     utils.informal_log("{} rows remaining post filtering for max - median time difference on survey to be at least {}".format(
-    #         len(df), max_median_diff))
-    # else:
-    #     utils.informal_log("No exclusions for maximum - median difference amount of time")
 
     # Keep rows that pass the attention check
     if post_attention_check:
@@ -485,7 +477,6 @@ def get_ratings(df,
     rating_df = rating_df.rename(columns=mc_mapping)
 
     # Since 1, 4, & 7 options have text, convert them to just numbers
-    # TODO: Remove this line due to a discrepancy between experimental and baseline
     rating_df = rating_df.replace({'1 (Not at all)': '1 (Not at all capable)'})
     rating_df = rating_df.replace({'1 (Not at all capable)': '1', '7 (Highly capable)': '7', '4 (Somewhat capable)':  '4'})
     # Convert data to float
@@ -495,13 +486,11 @@ def get_ratings(df,
     items = mc_mapping.values()
     mean_ratings = rating_df[rating_df.columns.intersection(items)].mean(axis=1)
     rating_df['all_items'] = mean_ratings
-    # print(len(mean_ratings))
+
     # Add category dimensions
     rating_df = _add_groupings(
         rating_df=rating_df,
         groupings=groupings)
-
-
 
     # Save condition
     rating_df['condition'] = df['CONDITION']
@@ -764,7 +753,6 @@ def prep_graph_data(rating_df,
             condition_group_results['mean'] = mean
 
             # Calculate 95% CI
-            # TODO: adjust this code to use helper function
             std, sem, ci = _get_errors(
                 df=condition_group_df,
                 error_dim=ci_dim,
@@ -1064,224 +1052,216 @@ def read_emmeans_marginalized_result(results_path,
 
     return graph_data, df
 
-def grouped_bar_graphs(groups,
-                       grouping_source,
-                       conditions,
-                       graph_data,
-                       ci_dim,
-                       jitter_dim,
-                       bar_alpha=0.75,
-                       # Parameters for graphing lines
-                       annotate_items=None,
-                       line_start=0,
-                       line_n_show=5,
-                       color_idxs=[7, 1, 2, 4],
-                       fig_size=None,
-                       title=None,
-                       save_dir=None,
-                       filename=None,
-                       save_ext='png',
-                       overwrite=True,
-                       debug=False):
-    '''
-    Given groupings of what mental state is in which group and rating DF, make Fig 1 style bar graph
-    Group is like Body, Heart, Mind from Weisman or Experience, Intelligence from Colombatto
+# def grouped_bar_graphs(groups,
+#                        grouping_source,
+#                        conditions,
+#                        graph_data,
+#                        ci_dim,
+#                        jitter_dim,
+#                        bar_alpha=0.75,
+#                        # Parameters for graphing lines
+#                        annotate_items=None,
+#                        line_start=0,
+#                        line_n_show=5,
+#                        color_idxs=[7, 1, 2, 4],
+#                        fig_size=None,
+#                        title=None,
+#                        save_dir=None,
+#                        filename=None,
+#                        save_ext='png',
+#                        overwrite=True,
+#                        debug=False):
+#     '''
+#     Given groupings of what mental state is in which group and rating DF, make Fig 1 style bar graph
+#     Group is like Body, Heart, Mind from Weisman or Experience, Intelligence from Colombatto
 
-    Arg(s):
-        groupings : dict[str : list[str]]
-            dictionary of dimension name -> list of mental states
-        grouping_source : str
-            'weisman' or 'colombatto'
-        rating_df : n_participants X n_mental_states + 1 pd.DataFrame
-        ci_dim : str
-            variable to compute CI over
-            'participants', 'items', or 'both'
-        jitter_dim : str or None
-            variable to plot jitter over
-            'participants', 'items', or 'both'
-        save_dir : str
-        save_ext : str
-        debug : bool
-    '''
+#     Arg(s):
+#         groupings : dict[str : list[str]]
+#             dictionary of dimension name -> list of mental states
+#         grouping_source : str
+#             'weisman' or 'colombatto'
+#         rating_df : n_participants X n_mental_states + 1 pd.DataFrame
+#         ci_dim : str
+#             variable to compute CI over
+#             'participants', 'items', or 'both'
+#         jitter_dim : str or None
+#             variable to plot jitter over
+#             'participants', 'items', or 'both'
+#         save_dir : str
+#         save_ext : str
+#         debug : bool
+#     '''
 
-    # Extract data
-    means = np.array(graph_data['means'])
-    errors = np.array(graph_data['errors'])
+#     # Extract data
+#     means = np.array(graph_data['means'])
+#     errors = np.array(graph_data['errors'])
 
-    # Display parameters for not marginalized by group
-    if groups is None or len(groups) == 0:
-        if title is None:
-            title = "Mean Ratings Across Conditions ({})".format(grouping_source.capitalize())
-        groups = []
-        ylim = [0, 6]
-        if fig_size is None:
-            fig_size = (6, 6)
-        legend_loc = 'upper right'
-    else:
-        if title is None:
-            title = "Mean Ratings Across Conditions for Each {} Category".format(grouping_source.capitalize())
-        ylim = [0, 7]
-        if fig_size is None:
-            fig_size = (7, 5)
-        legend_loc = 'upper right'
-    # Axis Labels
+#     # Display parameters for not marginalized by group
+#     if groups is None or len(groups) == 0:
+#         if title is None:
+#             title = "Mean Ratings Across Conditions ({})".format(grouping_source.capitalize())
+#         groups = []
+#         ylim = [0, 6]
+#         if fig_size is None:
+#             fig_size = (6, 6)
+#         legend_loc = 'upper right'
+#     else:
+#         if title is None:
+#             title = "Mean Ratings Across Conditions for Each {} Category".format(grouping_source.capitalize())
+#         ylim = [0, 7]
+#         if fig_size is None:
+#             fig_size = (7, 5)
+#         legend_loc = 'upper right'
+#     # Axis Labels
 
-    xlabel = ""
-    ylabel = "Rating (1-7)"
-
-
-    yticks = [i for i in range(1, min(8, math.floor(ylim[1]) + 1))]
-    yticklabels = [str(i) for i in yticks]
-
-    # Plot bar graph on figure
-
-    fig, ax, adjusted_xpos = visualizations.bar_graph(
-        data=means,
-        errors=errors,
-        groups=conditions,
-        labels=[group.capitalize() for group in groups],
-        separate_legends=True,
-        legend_loc=legend_loc,
-        alpha=bar_alpha,
-        title=title,
-        xlabel=xlabel,
-        ylabel=ylabel,
-        ylim=ylim,
-        yticks=yticks,
-        yticklabels=yticklabels,
-        return_adjusted_xpos=True,
-        fig_size=fig_size,
-        color_idxs=color_idxs,
-        show=False
-    )
-
-    # Extract group means
-    if 'group_means' in graph_data:
-        group_means = graph_data['group_means']
-
-        # Draw horizontal line for group mean
-        increment = 1 / len(group_means)
-        for idx, group_mean in enumerate(group_means.values()):
-            start = idx * increment
-            end = start + increment
-            ax.axhline(
-                group_mean,
-                xmin=start,
-                xmax=end)
-
-    # Perform jittering & add to plot
-    if jitter_dim is not None:
-        assert 'jitter_ys' in graph_data
-        assert 'group_items' in graph_data
-        jitter_ys = graph_data['jitter_ys']
-        group_items = graph_data['group_items']
-
-        n_groups = len(jitter_ys[0])
-        if n_groups == 2:
-            legend_locs = ['upper left', 'upper right']
-        elif n_groups == 3:
-            legend_locs = ['upper left', 'upper center', 'upper right']
-        else:
-            raise ValueError("{} groups not yet supported".format(n_groups))
-
-        for group_idx in range(n_groups):
-            group_points = []
-            for condition_idx in range(len(jitter_ys)):
-                x_center = adjusted_xpos[condition_idx][group_idx]
-                jitter_y = jitter_ys[condition_idx][group_idx]
-                # Repeat x values to complement y's
-                x = np.full(len(jitter_y), x_center)
-
-                # Jitter x-values
-                x, y = jitter1D(
-                    x=x,
-                    y=jitter_y,
-                    jitter_x=True,
-                    jitter_y=False)
-
-                group_points.append(np.stack([x, y], axis=1))
-
-            # Conver to numpy array and transpose
-            group_points = np.array(group_points)  # N_conditions X N_items_in_group X 2
-            group_points = np.swapaxes(group_points, 0, 1) # N_items_in_group X N_conditions X 2
+#     xlabel = ""
+#     ylabel = "Rating (1-7)"
 
 
-            # Separate X and Y
-            line_xs = group_points[..., 0]
-            line_ys = group_points[..., 1]
+#     yticks = [i for i in range(1, min(8, math.floor(ylim[1]) + 1))]
+#     yticklabels = [str(i) for i in yticks]
 
-            # Annotations for each line
-            cur_group_items = group_items[group_idx]
-            annotations = []
-            for item in cur_group_items:
-                annotations.append([item, "","",""])
+#     # Plot bar graph on figure
 
-            if line_start is None or line_start >= len(cur_group_items):
-                continue
+#     fig, ax, adjusted_xpos = visualizations.bar_graph(
+#         data=means,
+#         errors=errors,
+#         groups=conditions,
+#         labels=[group.capitalize() for group in groups],
+#         separate_legends=True,
+#         legend_loc=legend_loc,
+#         alpha=bar_alpha,
+#         title=title,
+#         xlabel=xlabel,
+#         ylabel=ylabel,
+#         ylim=ylim,
+#         yticks=yticks,
+#         yticklabels=yticklabels,
+#         return_adjusted_xpos=True,
+#         fig_size=fig_size,
+#         color_idxs=color_idxs,
+#         show=False
+#     )
 
-            # If pass in items to annotate, that takes precedence over indices
-            if annotate_items is not None:
-                select_idxs = np.array([True if item in annotate_items else False for item in cur_group_items])
-                xs = line_xs[select_idxs]
-                ys = line_ys[select_idxs]
-                labels = list(np.array(cur_group_items)[select_idxs])
-                labels = [str(label) for label in labels]
-            else:
-                xs = line_xs[line_start:line_start+line_n_show]
-                ys = line_ys[line_start:line_start+line_n_show]
-                labels = cur_group_items[line_start:line_start+line_n_show]
-            # Plot lines
-            fig, ax = visualizations.plot(
-                xs=xs,
-                ys=ys,
-                fig=fig,
-                ax=ax,
-                separate_legends=True,
-                legend_loc=legend_locs[group_idx],
-                marker_size=3,
-                alpha=1,
-                labels=labels,
-                scatter=True,
-                line=True)
+#     # Extract group means
+#     if 'group_means' in graph_data:
+#         group_means = graph_data['group_means']
 
-            lines = ax.get_lines()
+#         # Draw horizontal line for group mean
+#         increment = 1 / len(group_means)
+#         for idx, group_mean in enumerate(group_means.values()):
+#             start = idx * increment
+#             end = start + increment
+#             ax.axhline(
+#                 group_mean,
+#                 xmin=start,
+#                 xmax=end)
 
-    if save_dir is not None:
-        if debug:
-            save_dir = os.path.join('debug', save_dir)
-        utils.ensure_dir(save_dir)
-        # Save graph
-        if filename is None:
-            filename = ""
-            if len(groups) > 0:
-                filename += "group_"
-            filename += "graph_{}".format(grouping_source)
-            if jitter_dim is not None:
-                filename += "-jitter_{}".format(jitter_dim)
-            if ci_dim is not None:
-                filename += "-ci_{}".format(ci_dim)
-            if annotate_items is None:
-                if line_start is not None:
-                    filename += "-items_{}_{}".format(line_start, line_start + line_n_show)
-            else:
-                filename += "-items_custom_{}".format(len(annotate_items))
+#     # Perform jittering & add to plot
+#     if jitter_dim is not None:
+#         assert 'jitter_ys' in graph_data
+#         assert 'group_items' in graph_data
+#         jitter_ys = graph_data['jitter_ys']
+#         group_items = graph_data['group_items']
 
-        filename += ".{}".format(save_ext)
-        save_path = os.path.join(save_dir, filename)
-        if not os.path.exists(save_path) or overwrite:
-            plt.savefig(save_path, bbox_inches='tight')
-            utils.informal_log("Saved graph to {}".format(save_path))
-        else:
-            utils.informal_log("Path at {} exists and not overwriting".format(save_path))
+#         n_groups = len(jitter_ys[0])
+#         if n_groups == 2:
+#             legend_locs = ['upper left', 'upper right']
+#         elif n_groups == 3:
+#             legend_locs = ['upper left', 'upper center', 'upper right']
+#         else:
+#             raise ValueError("{} groups not yet supported".format(n_groups))
 
-        # # Save JSON results
-        # results_save_path = os.path.join(save_dir, 'group_graph_{}-ci_{}_data.json'.format(
-        #     grouping_source, ci_dim
-        # ))
-        # utils.write_file(results, results_save_path, overwrite=overwrite)
+#         for group_idx in range(n_groups):
+#             group_points = []
+#             for condition_idx in range(len(jitter_ys)):
+#                 x_center = adjusted_xpos[condition_idx][group_idx]
+#                 jitter_y = jitter_ys[condition_idx][group_idx]
+#                 # Repeat x values to complement y's
+#                 x = np.full(len(jitter_y), x_center)
+
+#                 # Jitter x-values
+#                 x, y = jitter1D(
+#                     x=x,
+#                     y=jitter_y,
+#                     jitter_x=True,
+#                     jitter_y=False)
+
+#                 group_points.append(np.stack([x, y], axis=1))
+
+#             # Conver to numpy array and transpose
+#             group_points = np.array(group_points)  # N_conditions X N_items_in_group X 2
+#             group_points = np.swapaxes(group_points, 0, 1) # N_items_in_group X N_conditions X 2
 
 
-    plt.show()
+#             # Separate X and Y
+#             line_xs = group_points[..., 0]
+#             line_ys = group_points[..., 1]
+
+#             # Annotations for each line
+#             cur_group_items = group_items[group_idx]
+#             annotations = []
+#             for item in cur_group_items:
+#                 annotations.append([item, "","",""])
+
+#             if line_start is None or line_start >= len(cur_group_items):
+#                 continue
+
+#             # If pass in items to annotate, that takes precedence over indices
+#             if annotate_items is not None:
+#                 select_idxs = np.array([True if item in annotate_items else False for item in cur_group_items])
+#                 xs = line_xs[select_idxs]
+#                 ys = line_ys[select_idxs]
+#                 labels = list(np.array(cur_group_items)[select_idxs])
+#                 labels = [str(label) for label in labels]
+#             else:
+#                 xs = line_xs[line_start:line_start+line_n_show]
+#                 ys = line_ys[line_start:line_start+line_n_show]
+#                 labels = cur_group_items[line_start:line_start+line_n_show]
+#             # Plot lines
+#             fig, ax = visualizations.plot(
+#                 xs=xs,
+#                 ys=ys,
+#                 fig=fig,
+#                 ax=ax,
+#                 separate_legends=True,
+#                 legend_loc=legend_locs[group_idx],
+#                 marker_size=3,
+#                 alpha=1,
+#                 labels=labels,
+#                 scatter=True,
+#                 line=True)
+
+#             lines = ax.get_lines()
+
+#     if save_dir is not None:
+#         if debug:
+#             save_dir = os.path.join('debug', save_dir)
+#         utils.ensure_dir(save_dir)
+#         # Save graph
+#         if filename is None:
+#             filename = ""
+#             if len(groups) > 0:
+#                 filename += "group_"
+#             filename += "graph_{}".format(grouping_source)
+#             if jitter_dim is not None:
+#                 filename += "-jitter_{}".format(jitter_dim)
+#             if ci_dim is not None:
+#                 filename += "-ci_{}".format(ci_dim)
+#             if annotate_items is None:
+#                 if line_start is not None:
+#                     filename += "-items_{}_{}".format(line_start, line_start + line_n_show)
+#             else:
+#                 filename += "-items_custom_{}".format(len(annotate_items))
+
+#         filename += ".{}".format(save_ext)
+#         save_path = os.path.join(save_dir, filename)
+#         if not os.path.exists(save_path) or overwrite:
+#             plt.savefig(save_path, bbox_inches='tight')
+#             utils.informal_log("Saved graph to {}".format(save_path))
+#         else:
+#             utils.informal_log("Path at {} exists and not overwriting".format(save_path))
+#     plt.show()
 
 '''
 N x N Correlation Matrix
@@ -1908,15 +1888,6 @@ def fa_plot(fa_groupings,
     groups = list(fa_groupings['factor_analysis'].keys())
     conditions = ['Baseline', 'Mechanistic', 'Functional', 'Intentional']
 
-    # orientation = 'vertical' # Only relevant for pointplot
-
-    # r_results_path = os.path.join(
-    #     R_results_dir,
-    #     '{}_components_results.txt'.format(n_factors))
-    # if not os.path.exists(r_results_path):
-    #     raise ValueError("Path to R results file {} does not exist".format(r_results_path))
-
-    # graph_save_dir = os.path.join(R_results_dir, 'graphs')
     utils.ensure_dir(graph_save_dir)
     emmeans_graph_data, emmeans_df = read_emmeans_marginalized_result(
         results_path=r_results_path,
@@ -2029,242 +2000,242 @@ def get_attitudes(df,
 
     return attitudes_df
 
-def dv_pointplot(dv_df,
-                 dv_labels,
-                 color_idxs=[7, 1, 2, 4],
-                #  letter_labels=True,
-                 show=True,
-                 save_dir=None,
-                 save_ext='pdf',
-                 overwrite=True):
-    # if not letter_labels:
-    #     dv_labels = {
-    #         'anthro': 'General\nAnthropomorphism',
-    #         'trust': 'Trust',
-    #         'general': 'General\nAttitude',
-    #         'se_how': 'Self-Efficacy\n(How LLMs Work)\n ',
-    #         'se_use': 'Self-Efficacy\n(How to Use LLMs)',
-    #         'confidence': 'Confidence\nof Responses'
-    #     }
-    # else:
-    #     dv_labels = {
-    #         'anthro': 'General\nAnthropomorphism\n(a)',
-    #         'trust': 'Trust\n\n(b)',
-    #         'general': 'General\nAttitude\n(c)',
-    #         'se_how': 'Self-Efficacy\n(How LLMs Work)\n(d)\n',
-    #         'se_use': 'Self-Efficacy\n(How to Use LLMs)\n(e)',
-    #         'confidence': 'Confidence\nof Responses\n(f)'
-    #     }
-    conditions = ['Baseline', 'Mechanistic', 'Functional', 'Intentional']
+# def dv_pointplot(dv_df,
+#                  dv_labels,
+#                  color_idxs=[7, 1, 2, 4],
+#                 #  letter_labels=True,
+#                  show=True,
+#                  save_dir=None,
+#                  save_ext='pdf',
+#                  overwrite=True):
+#     # if not letter_labels:
+#     #     dv_labels = {
+#     #         'anthro': 'General\nAnthropomorphism',
+#     #         'trust': 'Trust',
+#     #         'general': 'General\nAttitude',
+#     #         'se_how': 'Self-Efficacy\n(How LLMs Work)\n ',
+#     #         'se_use': 'Self-Efficacy\n(How to Use LLMs)',
+#     #         'confidence': 'Confidence\nof Responses'
+#     #     }
+#     # else:
+#     #     dv_labels = {
+#     #         'anthro': 'General\nAnthropomorphism\n(a)',
+#     #         'trust': 'Trust\n\n(b)',
+#     #         'general': 'General\nAttitude\n(c)',
+#     #         'se_how': 'Self-Efficacy\n(How LLMs Work)\n(d)\n',
+#     #         'se_use': 'Self-Efficacy\n(How to Use LLMs)\n(e)',
+#     #         'confidence': 'Confidence\nof Responses\n(f)'
+#     #     }
+#     conditions = ['Baseline', 'Mechanistic', 'Functional', 'Intentional']
 
-    # Create arrays for means and errors that is shape n_cond X n_dvs
-    means = []
-    errors = []
-    for condition in conditions:
-        condition_means = []
-        condition_errors = []
-        for idx, (dv_name, dv_label) in enumerate(dv_labels.items()):
-            cur_df = dv_df[dv_df['condition'] == condition].loc[:, dv_name]
+#     # Create arrays for means and errors that is shape n_cond X n_dvs
+#     means = []
+#     errors = []
+#     for condition in conditions:
+#         condition_means = []
+#         condition_errors = []
+#         for idx, (dv_name, dv_label) in enumerate(dv_labels.items()):
+#             cur_df = dv_df[dv_df['condition'] == condition].loc[:, dv_name]
 
-            mean = np.nanmean(cur_df.to_numpy())
-            sem = stats.sem(cur_df, axis=None, nan_policy='omit')
-            ci = stats.t.interval(
-                confidence=0.95,
-                df=len(cur_df)-1,
-                loc=mean,
-                scale=sem)
-            ci_error = (ci[1] - ci[0]) / 2
-            condition_means.append(mean)
-            condition_errors.append(ci_error)
+#             mean = np.nanmean(cur_df.to_numpy())
+#             sem = stats.sem(cur_df, axis=None, nan_policy='omit')
+#             ci = stats.t.interval(
+#                 confidence=0.95,
+#                 df=len(cur_df)-1,
+#                 loc=mean,
+#                 scale=sem)
+#             ci_error = (ci[1] - ci[0]) / 2
+#             condition_means.append(mean)
+#             condition_errors.append(ci_error)
 
-        means.append(condition_means)
-        errors.append(condition_errors)
+#         means.append(condition_means)
+#         errors.append(condition_errors)
 
-    # Graph
-    fig, ax = visualizations.pointplot(
-        means=means,
-        errors=errors,
-        labels=conditions,
-        show_legend=False,
-        orientation='vertical',
-        color_idxs=color_idxs,
-        xlabel='Belief Measured',
-        xtick_labels=list(dv_labels.values()),
-        xtick_label_rotation=0,
-        ylim=[1, 7],
-        ylabel='Rating (1-7)',
-        title='Mean Ratings of Additional Beliefs Across Conditions',
-        show_grid=True,
-        fig_size=(9, 4),
-        show=False
-    )
+#     # Graph
+#     fig, ax = visualizations.pointplot(
+#         means=means,
+#         errors=errors,
+#         labels=conditions,
+#         show_legend=False,
+#         orientation='vertical',
+#         color_idxs=color_idxs,
+#         xlabel='Belief Measured',
+#         xtick_labels=list(dv_labels.values()),
+#         xtick_label_rotation=0,
+#         ylim=[1, 7],
+#         ylabel='Rating (1-7)',
+#         title='Mean Ratings of Additional Beliefs Across Conditions',
+#         show_grid=True,
+#         fig_size=(9, 4),
+#         show=False
+#     )
 
-    # Add Legend outside of plot?
-    fig.legend(loc='lower center', bbox_to_anchor=(0.5, -0.1), ncol=4)
-    plt.tight_layout()
+#     # Add Legend outside of plot?
+#     fig.legend(loc='lower center', bbox_to_anchor=(0.5, -0.1), ncol=4)
+#     plt.tight_layout()
 
-    if save_dir is not None:
-        save_path = os.path.join(save_dir, 'dv_pointplot_data.{}'.format(save_ext))
-        if not os.path.exists(save_path) or overwrite:
-            utils.informal_log("Saving DV graph to {}".format(
-                save_path
-            ))
-            plt.savefig(save_path, bbox_inches='tight')
-        else:
-            utils.informal_log("DV graph already exists at {} and not overwriting".format(
-                save_path
-            ))
-    if show:
-        plt.show()
+#     if save_dir is not None:
+#         save_path = os.path.join(save_dir, 'dv_pointplot_data.{}'.format(save_ext))
+#         if not os.path.exists(save_path) or overwrite:
+#             utils.informal_log("Saving DV graph to {}".format(
+#                 save_path
+#             ))
+#             plt.savefig(save_path, bbox_inches='tight')
+#         else:
+#             utils.informal_log("DV graph already exists at {} and not overwriting".format(
+#                 save_path
+#             ))
+#     if show:
+#         plt.show()
 
-def dv_bargraph(dv_df,
-            #   plot_type='bargraph',
-              color_idxs=[7, 1, 2, 4],
-              save_dir=None,
-              save_ext='pdf',
-              overwrite=True,
-              one_fig=True):
-    dv_labels = {
-        'anthro': 'General Anthropomorphism\n(a)',
-        'trust': 'Trust\n(b)',
-        'general': 'General Attitude\n(c)',
-        'se_how': 'Self-Efficacy (How LLMs Work)\n(d)',
-        'se_use': 'Self-Efficacy (How to Use LLMs)\n(e)',
-        'confidence': 'Confidence of Responses\n(f)'
-    }
-    conditions = ['Baseline', 'Mechanistic', 'Functional', 'Intentional']
+# def dv_bargraph(dv_df,
+#             #   plot_type='bargraph',
+#               color_idxs=[7, 1, 2, 4],
+#               save_dir=None,
+#               save_ext='pdf',
+#               overwrite=True,
+#               one_fig=True):
+#     dv_labels = {
+#         'anthro': 'General Anthropomorphism\n(a)',
+#         'trust': 'Trust\n(b)',
+#         'general': 'General Attitude\n(c)',
+#         'se_how': 'Self-Efficacy (How LLMs Work)\n(d)',
+#         'se_use': 'Self-Efficacy (How to Use LLMs)\n(e)',
+#         'confidence': 'Confidence of Responses\n(f)'
+#     }
+#     conditions = ['Baseline', 'Mechanistic', 'Functional', 'Intentional']
 
-    if one_fig:
-        n_rows = 2
-        n_cols = 3
-        fig, axes = plt.subplots(n_rows, n_cols, figsize=(8.5, 6.4))
+#     if one_fig:
+#         n_rows = 2
+#         n_cols = 3
+#         fig, axes = plt.subplots(n_rows, n_cols, figsize=(8.5, 6.4))
 
-    for idx, (dv_name, dv_label) in enumerate(dv_labels.items()):
-        if one_fig:
-            ax_row = idx // n_cols
-            ax_col = idx % n_cols
-            ax = axes[ax_row][ax_col]
+#     for idx, (dv_name, dv_label) in enumerate(dv_labels.items()):
+#         if one_fig:
+#             ax_row = idx // n_cols
+#             ax_col = idx % n_cols
+#             ax = axes[ax_row][ax_col]
 
-        means = []
-        errors = []
-        for condition in conditions:
-            # Select rows for this condition and columns for this DV
-            condition_df = dv_df[dv_df['condition'] == condition].loc[:, dv_name]
+#         means = []
+#         errors = []
+#         for condition in conditions:
+#             # Select rows for this condition and columns for this DV
+#             condition_df = dv_df[dv_df['condition'] == condition].loc[:, dv_name]
 
-            # Obtain mean and 95% CI
-            mean = np.nanmean(condition_df.to_numpy())
-            sem = stats.sem(condition_df, axis=None, nan_policy='omit')
-            ci = stats.t.interval(
-                confidence=0.95,
-                df=len(condition_df)-1,
-                loc=mean,
-                scale=sem)
-            ci_error = (ci[1] - ci[0]) / 2
+#             # Obtain mean and 95% CI
+#             mean = np.nanmean(condition_df.to_numpy())
+#             sem = stats.sem(condition_df, axis=None, nan_policy='omit')
+#             ci = stats.t.interval(
+#                 confidence=0.95,
+#                 df=len(condition_df)-1,
+#                 loc=mean,
+#                 scale=sem)
+#             ci_error = (ci[1] - ci[0]) / 2
 
-            means.append([mean])
-            errors.append([ci_error])
+#             means.append([mean])
+#             errors.append([ci_error])
 
-        # Graph
+#         # Graph
 
-        if one_fig:
-            # xlabel = 'Condition'
-            xlabel = dv_label
-            ylabel = 'Rating (1-7)' #.format(dv_label)
-            # ylim = [0, np.min([np.max(means) + 1.5, 7])]
-            ylim = [0, 7]
-            title = None
-            fig_size = None
-            show_legend = False
-            show = False
-            if idx == 0:
-                groups = conditions
-            else:
-                groups = None
-        else:
-            xlabel = 'Condition'
-            ylabel = '{} (1-7)'.format(dv_label)
-            # ylim = [0, np.min([np.max(means) + 1.5, 7])]
-            ylim = [0, 7]
-            title = '{} Across Conditions'.format(dv_label)
-            show_legend = True
-            fig_size = (4, 4.5)
-            groups = conditions
-            show = True
+#         if one_fig:
+#             # xlabel = 'Condition'
+#             xlabel = dv_label
+#             ylabel = 'Rating (1-7)' #.format(dv_label)
+#             # ylim = [0, np.min([np.max(means) + 1.5, 7])]
+#             ylim = [0, 7]
+#             title = None
+#             fig_size = None
+#             show_legend = False
+#             show = False
+#             if idx == 0:
+#                 groups = conditions
+#             else:
+#                 groups = None
+#         else:
+#             xlabel = 'Condition'
+#             ylabel = '{} (1-7)'.format(dv_label)
+#             # ylim = [0, np.min([np.max(means) + 1.5, 7])]
+#             ylim = [0, 7]
+#             title = '{} Across Conditions'.format(dv_label)
+#             show_legend = True
+#             fig_size = (4, 4.5)
+#             groups = conditions
+#             show = True
 
-        if not one_fig and (save_dir is not None or overwrite):
-            save_path = os.path.join(save_dir, '{}_bargraph.{}'.format(dv_name, save_ext))
-            utils.informal_log("Saving {} graph to {}".format(
-                dv_name, save_path
-            ))
-        else:
-            save_path = None
+#         if not one_fig and (save_dir is not None or overwrite):
+#             save_path = os.path.join(save_dir, '{}_bargraph.{}'.format(dv_name, save_ext))
+#             utils.informal_log("Saving {} graph to {}".format(
+#                 dv_name, save_path
+#             ))
+#         else:
+#             save_path = None
 
 
 
-        fig, ax = visualizations.bar_graph(
-            fig=fig,
-            ax=ax,
-            data=means,
-            errors=errors,
-            groups=groups,
-            show_legend=show_legend,
-            legend_loc='upper left',
-            xlabel=xlabel,
-            ylabel=ylabel,
-            axlabel_fontsize=10,
-            ylim=ylim,
-            title=title,
-            alpha=0.75,
-            color_idxs=color_idxs,
-            fig_size=fig_size,
-            save_path=save_path,
-            show=show)
-        # elif plot_type == 'pointplot':
-        #     fig, ax = visualizations.pointplot(
-        #         fig=fig,
-        #         ax=ax,
-        #         means=means,
-        #         errors=errors,
-        #         orientation='vertical',
-        #         labels=groups,
-        #         ylim=ylim[1:],
-        #         xlabel=xlabel,
-        #         ylabel=ylabel,
-        #         show_legend=show_legend,
-        #         color_idxs=color_idxs,
-        #         show_grid=True,
-        #         fig_size=fig_size,
-        #         save_path=save_path,
-        #         show=show
+#         fig, ax = visualizations.bar_graph(
+#             fig=fig,
+#             ax=ax,
+#             data=means,
+#             errors=errors,
+#             groups=groups,
+#             show_legend=show_legend,
+#             legend_loc='upper left',
+#             xlabel=xlabel,
+#             ylabel=ylabel,
+#             axlabel_fontsize=10,
+#             ylim=ylim,
+#             title=title,
+#             alpha=0.75,
+#             color_idxs=color_idxs,
+#             fig_size=fig_size,
+#             save_path=save_path,
+#             show=show)
+#         # elif plot_type == 'pointplot':
+#         #     fig, ax = visualizations.pointplot(
+#         #         fig=fig,
+#         #         ax=ax,
+#         #         means=means,
+#         #         errors=errors,
+#         #         orientation='vertical',
+#         #         labels=groups,
+#         #         ylim=ylim[1:],
+#         #         xlabel=xlabel,
+#         #         ylabel=ylabel,
+#         #         show_legend=show_legend,
+#         #         color_idxs=color_idxs,
+#         #         show_grid=True,
+#         #         fig_size=fig_size,
+#         #         save_path=save_path,
+#         #         show=show
 
-        #     )
-        # else:
-        #     raise ValueError("plot_type '{}' not supported".format(plot_type))
-        if one_fig:
-            axes[ax_row][ax_col] = ax
+#         #     )
+#         # else:
+#         #     raise ValueError("plot_type '{}' not supported".format(plot_type))
+#         if one_fig:
+#             axes[ax_row][ax_col] = ax
 
-    if one_fig:
-        fig.suptitle(
-            "Responses to Additional Dependent Variables Across Conditions",
-            fontsize=16,
-            x=0.5, y=1.05)
-        fig.legend(
-            loc='lower center',
-            ncol=4,
-            fontsize=12,
-            bbox_to_anchor=(0.5, -0.05))
+#     if one_fig:
+#         fig.suptitle(
+#             "Responses to Additional Dependent Variables Across Conditions",
+#             fontsize=16,
+#             x=0.5, y=1.05)
+#         fig.legend(
+#             loc='lower center',
+#             ncol=4,
+#             fontsize=12,
+#             bbox_to_anchor=(0.5, -0.05))
 
-        # plt.tight_layout()
-        fig.subplots_adjust(hspace=0.3, wspace=0.25)
+#         # plt.tight_layout()
+#         fig.subplots_adjust(hspace=0.3, wspace=0.25)
 
-        if save_dir is not None or overwrite:
-            save_path = os.path.join(save_dir, 'dv_bargraph.{}'.format(save_ext))
-            utils.informal_log("Saving DV graph to {}".format(
-                save_path
-            ))
-            plt.savefig(save_path, bbox_inches='tight')
+#         if save_dir is not None or overwrite:
+#             save_path = os.path.join(save_dir, 'dv_bargraph.{}'.format(save_ext))
+#             utils.informal_log("Saving DV graph to {}".format(
+#                 save_path
+#             ))
+#             plt.savefig(save_path, bbox_inches='tight')
 
-        plt.show()
+#         plt.show()
 
 
 def save_r_format(attitudes_df,
@@ -2394,13 +2365,9 @@ def mechanistic_mcq_analysis(df,
     participant_accuracies = []
     for _, row in mcq_correct_df.iterrows():
         participant_accuracy = row[list(mcq_correct_answers.keys())].sum() / 4 * 100
-        # utils.informal_log("Participant {}: {:.2f}% accuracy".format(
-        #     row['PROLIFIC_PID'], participant_accuracy
-        # ))
         participant_accuracies.append(participant_accuracy)
 
-    # print(participant_accuracies)
-    # print(mcq_correct_df.head())
+
     mcq_correct_df['accuracy'] = participant_accuracies
     visualizations.histogram(
         np.array(participant_accuracies),
@@ -2416,26 +2383,6 @@ def mechanistic_mcq_analysis(df,
 '''
 Compute correlations
 '''
-
-# def compute_correlation(dv1,
-#                         dv2,
-#                         correlation_type):
-#     '''
-#     Arg(s):
-#         dv1 : np.array or list
-#         dv2 : np.array or list same legnth as dv1
-#         correlation_type : str
-
-#     returns : float
-#     '''
-
-#     assert len(dv1) == len(dv2)
-
-#     if correlation_type == 'spearman':
-#         return stats.spearmanr(dv1, dv2)
-#     else:
-#         raise ValueError("Correlation type {} not supported".format(correlation_type))
-
 def addit_dv_correlations(addit_dv_df,
                           rating_df,
                           addit_dv_list,
@@ -2450,12 +2397,8 @@ def addit_dv_correlations(addit_dv_df,
     if save_dir is not None:
         if mech_quiz_df is None:
             filename = 'correlations'
-            # correlation_save_path = os.path.join(save_dir, 'correlations.json')
-            # correlation_vis_save_path = os.path.join(save_dir, 'correlations.pdf')
         else:
             filename = 'mech_correlations'
-            # correlation_save_path = os.path.join(save_dir, 'mech_correlations.json')
-            # correlation_vis_save_path = os.path.join(save_dir, 'mech_correlations.pdf')
 
         # change name for scaled
         if min_max_scale:
@@ -2732,176 +2675,8 @@ def calculate_iir(rating_df,
     return results
 
 '''
-Decomposition (NMF or Factor Loading)
-# '''
-# def normalize_data(data):
-#     '''
-#     Data should be shape n_items x  n_participants
-#     '''
-
-#     assert data.shape[0] < data.shape[1], "data had shape ({}), should it be transposed?".format(data.shape)
-
-#     n_items, n_participants = data.shape
-#     means = np.mean(data, axis=1, keepdims=True)  # Calculate mean for each item
-#     sds = np.std(data, axis=1, keepdims=True, ddof=1)  # Calculate std for each item
-
-#     assert means.shape == (n_items, 1)
-#     assert sds.shape == (n_items, 1)
-
-#     normalized_data = (data - means) / sds
-#     assert normalized_data.shape == data.shape
-#     # print(np.mean(normalized_data))
-#     return normalized_data
-
-# def compute_factor_scores(responses,
-#                           loadings,
-#                           return_predictions):
-#     '''
-#     Calculates factor scores based on Thurstone method
-#         * https://personality-project.org/r/psych/help/factor.scores.html
-#         * https://pmc.ncbi.nlm.nih.gov/articles/PMC3773873/
-
-
-#     Arg(s):
-#         responses : n_items x n_participants
-#             UN-normalized responses, normalization will occur in this function
-#         loadings : n_items x n_factors
-
-#     Returns:
-#         factor_scores : n_factors x n_participants
-#         predictions (opt) : n_items x n_participants
-#     '''
-#     assert responses.shape[0] < responses.shape[1], "responses had shape ({}), should it be transposed?".format(responses.shape)
-#     # Normalize responses if not already normalized
-#     if np.mean(responses) > 1e-5:
-#         responses = normalize_data(responses)
-#         utils.informal_log("Normalizing responses")
-#     else:
-#         utils.informal_log("Not normalizing responses")
-
-#     # Calculate correlation coefficient
-#     lambda_ = np.corrcoef(responses, rowvar=True) # n_items x n_items
-#     lambda_inv = np.linalg.inv(lambda_)
-#     weights = lambda_inv @ loadings # n_items x n_factors
-#     factor_scores = weights.T @ responses # n_factors x n_participants
-
-#     if return_predictions:
-#         predictions = loadings @ factor_scores
-#         return factor_scores, predictions
-#     return factor_scores
-
-# def perform_decomposition(responses,
-#                           mode,
-#                           n_components,
-#                           items,
-#                           hparams={},
-#                         return_obj=False,
-#                         save_dir=None,
-#                         overwrite=True):
-#     '''
-#     Given a rating DF (n_participants x n_items), return the factors for the ratings (shape n_items x n_components)
-
-#     Arg(s):
-#         ratings : n_items x n_participants matrix
-#         n_components : int
-#         items : list[str]
-#         hparams : dict
-#             Hyperparameters for NMF:
-#                 alpha_W : float (regularization on W)
-#                 alpha_H : float (regularization on H)
-#                 l1_ratio : float
-#     Returns:
-#         n_items X n_components np.array
-#     '''
-#     n_items = len(items)
-
-#     # Select columns from rating & convert to numpy array
-#     # ratings = ratings.loc[:, items]
-#     # ratings = np.array(ratings)
-#     # Transpose so each row is an item and each column is the participants' responses
-#     if responses.shape[1] == n_items:
-#         responses = responses.T
-
-#     n_observations = responses.shape[1]
-
-#     assert responses.shape[0] <responses.shape[1], \
-#         "responses had shape ({}), expected n_items x n_participants".format(responses.shape)
-#     # Normalize responses if not already normalized
-#     print(responses.shape)
-#     if np.mean(responses) > 1e-5:
-#         responses = normalize_data(responses)
-#         utils.informal_log("Normalizing responses")
-#     else:
-#         utils.informal_log("Not normalizing responses")
-
-#     # FA vs NMF
-#     if mode == 'factor_analysis':
-#         decomposition_obj = FactorAnalysis(
-#             n_components=n_components,
-#             **hparams)
-#     elif mode == 'nmf':
-#         decomposition_obj = NMF(
-#             n_components=n_components,
-#             **hparams
-#         )
-#     else:
-#         raise ValueError("Mode '{}' not supported. Try 'factor_analysis' or 'nmf'")
-
-#     utils.informal_log("Mode: {} Hyper-parameters: {}".format(
-#         mode, hparams
-#     ))
-#     loadings = decomposition_obj.fit_transform(responses) # If NMF, this is W matrix
-
-#     # Put into a DF
-#     factors = ['Factor{}'.format(i+1) for i in range(n_components)]
-#     factor_df = pd.DataFrame(
-#         data=loadings,
-#         columns=factors)
-#     # temp_df = factor_df.copy()
-
-#     # Add columns for factor and the item
-#     factor_df['factor'] = factor_df.idxmax(axis=1)
-#     factor_df.insert(0, 'item', items)
-
-#     # Get items that belong to each factor
-#     # factors = list(temp_df.columns)
-#     items = {}
-#     for factor in factors:
-#         items[factor] = list(factor_df[factor_df['factor'] == factor]['item'])
-
-#     # Make dictionary of metrics
-#     metrics = {}
-#     if mode == 'factor_analysis':
-#         ll = decomposition_obj.score(responses)
-#         metrics['avg_log_likelihood'] = ll
-#         bic = -2 * ll + n_components * np.log(n_observations)
-#         metrics['bic'] = bic
-#         metrics['mean_covariance'] = float(np.mean(decomposition_obj.get_covariance()))
-#         metrics['mean_precision'] = float(np.mean(decomposition_obj.get_precision()))
-#     elif mode == 'nmf':
-#         metrics['reconstruction_err'] = decomposition_obj.reconstruction_err_
-
-#     metrics['assignment'] = items
-
-#     if save_dir is not None:
-#         factor_analysis_save_path = os.path.join(save_dir, '{}_components.csv'.format(
-#             n_components))
-#         metrics_save_path = os.path.join(save_dir, '{}_components_metrics.json'.format(n_components))
-#         factor_assignment_save_path = os.path.join(save_dir, '{}_components_groupings.json'.format(n_components))
-
-#         if not os.path.exists(factor_analysis_save_path) or overwrite:
-#             utils.write_file(factor_df, factor_analysis_save_path, overwrite=overwrite)
-#             utils.write_file(metrics, metrics_save_path, overwrite=overwrite)
-#             utils.write_file(items, factor_assignment_save_path, overwrite=overwrite)
-
-#     if return_obj:
-#         return loadings, factor_df, metrics, decomposition_obj
-#     else:
-#         return loadings, factor_df, metrics
-
-# '''
-# Visualize factor loadings
-# '''
+Visualize factor loadings
+'''
 # Assign factor categories
 def assign_categories(df,
                       item_colname,
@@ -3016,55 +2791,3 @@ def visualize_loadings(loading_df,
 
     plt.show()
     plt.clf()
-
-# '''
-# Factor modeling
-# '''
-
-# def fit_factor_model(loadings,
-#                      data,
-#                      mu=None):
-#     '''
-#     Given loadings and data to estimate, learn factor scores to estimate using
-#         X - mu = L * F + epsilon
-#             X : data (n_items X n_participants)
-#             mu : mean of data (n_items) # TODO: is this global or test? I think global
-#             L : loadings (n_items X n_factors)
-#             F : factor_scores (n_factors X n_participants)
-#             epsilon : error
-
-#     Arg(s):
-#         loadings : n_items X n_factors np.array
-#         data : n_participants X n_items np.array
-
-#     Returns:
-#         linreg : sklearn.linear_model.LinearRegression
-#     '''
-#     # Transpose loadings to be n_factors X n_items
-#     loadings = loadings.T
-
-#     # Take mean for each item across participants
-#     if mu is None:
-#         mu = np.mean(data, axis=0)
-#         assert len(mu) == data.shape[1]
-
-#     # We want to estimate data - mu (see paper Judy sent)
-#     Y = data - mu
-
-#     linreg = LinearRegression(
-#         fit_intercept=False
-#     )
-
-#     linreg.fit(
-#         X=loadings,
-#         y=Y)
-
-#     r2score = linreg.score(loadings, Y)
-
-#     predictions = linreg.predict(loadings)
-
-#     return {
-#         'linear_regression': linreg,
-#         'y_true': Y,
-#         'y_pred': predictions,
-#     }

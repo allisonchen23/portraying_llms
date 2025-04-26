@@ -11,15 +11,22 @@ emm_options(pbkrtest.limit = 20000)
 rating_analysis <- function(df_path,
                             save_dir,
                             save_txt = TRUE,
-                            n_components = NULL) {
+                            n_components = NULL,
+                            overwrite = FALSE) {
   if (!is.null(n_components)) {
     category <- sprintf("%d_components", n_components)
   }
   else {
     category <- "body-heart-mind"
   }
-  save_results_path <- sprintf("%s/%s_results.txt", save_dir, category)
-  cat("Saving results to", save_results_path)
+  if (!is.null(save_dir)) {
+    save_results_path <- sprintf("%s/%s_results.txt", save_dir, category)
+    if (file.exists(save_results_path) && !overwrite) {
+      print(sprintf("File exists at %s and not overwriting.", save_results_path))
+      return()
+    }
+    cat("Saving results to", save_results_path, "\n")
+  }
   # Load data frame & column items
   df <- read.csv(df_path)
 
@@ -62,9 +69,16 @@ rating_analysis <- function(df_path,
 
 item_level_rating_analysis <- function(df_path,
                                        save_dir,
-                                       save_txt = TRUE) {
-  save_results_path <- sprintf("%s/results.txt", save_dir)
-  cat("Saving results to", save_results_path)
+                                       save_txt = TRUE,
+                                       overwrite = FALSE) {
+  if (!is.null(save_dir)) {
+    save_results_path <- sprintf("%s/results.txt", save_dir)
+    if (file.exists(save_results_path) && !overwrite) {
+      print(sprintf("File exists at %s and not overwriting.", save_results_path))
+      return()
+    }
+    cat("Saving results to", save_results_path, "\n")
+  }
   df <- read.csv(df_path)
   # cols <- unique(df$item)
 
@@ -102,13 +116,21 @@ item_level_rating_analysis <- function(df_path,
 attitude_analysis <- function(attitude,
                               df_path,
                               save_dir,
-                              save_txt = TRUE) {
+                              save_txt = TRUE,
+                              overwrite = FALSE) {
   # Load data frame & column items
   df <- read.csv(df_path)
 
   # Make file to save results
-  save_results_path <- sprintf("%s/%s_results.txt", save_dir, attitude)
-  cat("Saving results to", save_results_path, "\n")
+  if (!is.null(save_dir)) {
+    save_results_path <- sprintf("%s/%s_results.txt", save_dir, attitude)
+    if (file.exists(save_results_path) && !overwrite) {
+      print(sprintf("File exists at %s and not overwriting.", save_results_path))
+      return()
+    }
+    cat("Saving results to", save_results_path, "\n")
+  }
+
   # Convert portrayal to categorical factor
   df$portrayal <- factor(df$condition, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
 
