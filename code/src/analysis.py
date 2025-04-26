@@ -14,6 +14,11 @@ from sklearn.preprocessing import MinMaxScaler
 import utils
 import visualizations
 
+'''
+
+DATA CLEANING / PREPARATION
+
+'''
 def get_stats_df(df, stats, axis_name):
     '''
     Given DF of numbers, return the statistics requested
@@ -313,14 +318,6 @@ def _verify_post_attention_check(df):
 
     return df[pass_ac]
 
-# def _verify_insurvey_attention_check(df):
-#     '''
-#     Given dataframe, return rows that pass in survey attention check
-#     '''
-#     ac_response = df['41_Q35']
-#     pass_ac = ac_response.str.contains('4')
-
-#     return df[pass_ac]
 
 def perform_exclusions(df,
                        # Exclusion parameters
@@ -376,7 +373,11 @@ def perform_exclusions(df,
 
     return df
 
+'''
 
+ANALYSIS
+
+'''
 '''
 Functions for Mean Ratings & Statistics of Ratings
 '''
@@ -579,7 +580,6 @@ def mean_ratings(rating_df,
 
     return stats_dfs
 
-
 def create_master_stats(stats_dfs,
                         join_col_name='mental_state',
                         save_dir=None,
@@ -611,6 +611,99 @@ def create_master_stats(stats_dfs,
         utils.write_file(df, save_path, overwrite=overwrite)
 
     return df
+
+'''
+Functions for data preparation of mixed effects models
+'''
+def prepare_R_df(rating_df,
+                 groupings,
+                 save_dir,
+                 separate_groups=True,
+                 overwrite=False):
+    '''
+    1. Convert condition column to numbers
+    2. Create separate DFs for each category
+    '''
+    if separate_groups:  # Save separate CSV for each group (body, mind, heart, experience, intelligence)
+        for source, source_group in groupings.items():
+            for category_name, category_items in source_group.items():
+                # Keep table format participants X items + condition
+                key = '{}_{}'.format(source,category_name)
+                keep_columns = category_items + ['condition', key]
+                df = rating_df[rating_df.columns.intersection(keep_columns)]
+
+                save_path = os.path.join(save_dir, '{}.csv'.format(key))
+                utils.write_file(df, save_path, overwrite=overwrite)
+    else: # Only save separate CSVs for each grouping method (Weisman, Colombatto)
+        path_dictionary = {}
+        for source, source_group in groupings.items():
+            # Create item -> group mapping
+            item_group_mapping = {}
+            items_list = []
+            for category_name, category_items in source_group.items():
+                for item in category_items:
+                    item_group_mapping[item.replace(' ', '.')] = category_name
+                    items_list.append(item)
+            # items_list = list(item_group_mapping.keys())
+            items_list_R = list(item_group_mapping.keys())
+            # Select items and condition
+            keep_columns = items_list + ['condition']
+
+            df = rating_df[rating_df.columns.intersection(keep_columns)]
+            # Rename columns to replace ' ' with '.'
+
+            df = df.rename(columns=lambda x: x.replace(' ', '.'))
+            # Assign PID
+            df.loc[:, 'pid'] = ['pid{}'.format(i + 1) for i in range(len(df))]
+
+            # Convert into long format with columns item, rating, condition, pid
+            id_vars = ['condition', 'pid']
+            value_vars = items_list_R
+            df = pd.melt(
+                frame=df,
+                id_vars=id_vars,
+                value_vars=value_vars,
+                var_name='item',
+                value_name='rating'
+            )
+
+            # Add group as a column
+            df.loc[:, 'category'] = df['item'].apply(lambda x : item_group_mapping[x])
+
+            save_path = os.path.join(save_dir, '{}.csv'.format(source))
+            utils.write_file(df, save_path, overwrite=overwrite)
+            path_dictionary[source] = save_path
+        path_dictionary_save_path = os.path.join(save_dir, 'paths.json')
+        utils.write_file(path_dictionary, path_dictionary_save_path, overwrite=overwrite)
+
+def copy_groupings(groupings,
+                   all_items=None,
+                   save_dir=None,
+                   overwrite=True):
+    '''
+    Rewrite groupings so they are stored in separate files for each category & replace ' '' with '.' for R
+    '''
+    utils.ensure_dir(save_dir)
+
+    if all_items is None:
+        accumulate_items = True
+    else:
+        all_items = [item.replace(' ', '.').replace('-', '.') for item in all_items]
+        accumulate_items = False
+    for grouping_source, grouping in groupings.items():
+        if accumulate_items:
+            all_items = []
+        for category_name, items in grouping.items():
+            key = '{}_{}'.format(grouping_source, category_name)
+            items = [item.replace(' ', '.').replace('-', '.') for item in items]
+
+            save_path = os.path.join(save_dir, '{}_items.txt'.format(key))
+            utils.write_file(items, save_path, overwrite=overwrite)
+            if accumulate_items:
+                all_items += items
+        # Name the file based on grouping source just to make downstream code easier
+        all_items_save_path = os.path.join(save_dir, '{}_items.txt'.format(grouping_source))
+        utils.write_file(all_items,all_items_save_path, overwrite=overwrite)
 
 '''
 Code for formatting data from EMMeans
@@ -835,189 +928,6 @@ def read_emmeans_marginalized_result(results_path,
 
     return graph_data, df
 
-'''
-N x N Correlation Matrix
-'''
-def correlation_matrix(rating_df,
-                       group_items,
-                       save_dir=None):
-    condition_order = {
-        'Baseline': 0,
-        'Mechanistic': 1,
-        'Functional': 2,
-        'Intentional': 3
-    }
-    line_color = 'black'
-    n_per_condition = len(rating_df) / len(condition_order)
-
-    # Get number per condition
-    n_per_condition_dict = {}
-    for condition in condition_order.keys():
-        print(condition)
-        n_per_condition_dict[condition] = len(rating_df[rating_df['condition'] == condition])
-
-    # Sort by condition, grouping conditions together
-    rating_df = rating_df.sort_values(by='condition', key=lambda x: x.map(condition_order))
-    rating_df = rating_df.reset_index(drop=True)
-    condition_pid_df = rating_df.loc[:, ['condition', 'participant_id']]
-    assert len(set(condition_pid_df['participant_id'])) == len(condition_pid_df['participant_id'])
-
-    rating_df = rating_df.drop(labels=['condition','weisman_body', 'weisman_heart', 'weisman_mind',
-       'colombatto_experience', 'colombatto_intelligence', 'participant_id'], axis=1)
-
-    # If pass in a list of items, select these columns
-    if group_items is not None:
-        rating_df = rating_df[group_items]
-
-    # Convert into an N x K numpy array
-    # ratings = rating_df.to_numpy()
-
-    corr = rating_df.transpose().corr('spearman')
-    print(corr.shape)
-
-    # Plot correlation matrix w/colorbar
-    im = plt.matshow(corr)
-    plt.colorbar(im)
-
-    # Add title
-    plt.title("Spearman Correlation Between Participants", y=1.1)
-
-    # Annotations for Condition
-    n_running_responses = 0
-    condition_pid_dict = {}
-    for condition_name in condition_order.keys():
-        # Calculate positions for text and dividers
-        n_per_condition = n_per_condition_dict[condition_name]
-        divider_pos = n_running_responses + n_per_condition - 0.5
-        text_pos = (n_running_responses * 2 + n_per_condition) / 2 - 0.5
-
-        # X-Axis annotations
-        plt.annotate(condition_name, xy=(text_pos, 0), xytext=(text_pos, -2),
-                     ha='center')
-        plt.annotate('', xy=(divider_pos, 0), xytext=(divider_pos, -5),
-                 arrowprops=dict(arrowstyle="-", color=line_color))
-        plt.axvline(x=divider_pos, color=line_color, linestyle='-')
-
-        # Y-Axis annotations
-        plt.annotate(condition_name, xy=(0, text_pos), xytext=(-3, text_pos),
-                     va='center', rotation=90)
-        plt.annotate('', xy=(0, divider_pos), xytext=(-8, divider_pos),
-                 arrowprops=dict(arrowstyle="-", color=line_color))
-        plt.axhline(y=divider_pos, color=line_color, linestyle='-')
-
-        # Increment n_running_responses
-        n_running_responses += n_per_condition
-
-        # Get list of PIDs in this condition
-        condition_pids = condition_pid_df[condition_pid_df['condition'] == condition_name]['participant_id'].to_list()
-        condition_pid_dict[condition_name] = condition_pids
-
-    # Remove axis tick labels
-    plt.xticks([])
-    plt.yticks([])
-
-    if save_dir is not None:
-        save_path = os.path.join(save_dir, 'participant_correlation.pdf')
-        plt.savefig(save_path)
-
-    plt.show()
-    plt.clf()
-
-    return condition_pid_dict
-
-'''
-Functions for data preparation of mixed effects models
-'''
-def prepare_R_df(rating_df,
-                 groupings,
-                 save_dir,
-                 separate_groups=True,
-                 overwrite=False):
-    '''
-    1. Convert condition column to numbers
-    2. Create separate DFs for each category
-    '''
-    if separate_groups:  # Save separate CSV for each group (body, mind, heart, experience, intelligence)
-        for source, source_group in groupings.items():
-            for category_name, category_items in source_group.items():
-                # Keep table format participants X items + condition
-                key = '{}_{}'.format(source,category_name)
-                keep_columns = category_items + ['condition', key]
-                df = rating_df[rating_df.columns.intersection(keep_columns)]
-
-                save_path = os.path.join(save_dir, '{}.csv'.format(key))
-                utils.write_file(df, save_path, overwrite=overwrite)
-    else: # Only save separate CSVs for each grouping method (Weisman, Colombatto)
-        path_dictionary = {}
-        for source, source_group in groupings.items():
-            # Create item -> group mapping
-            item_group_mapping = {}
-            items_list = []
-            for category_name, category_items in source_group.items():
-                for item in category_items:
-                    item_group_mapping[item.replace(' ', '.')] = category_name
-                    items_list.append(item)
-            # items_list = list(item_group_mapping.keys())
-            items_list_R = list(item_group_mapping.keys())
-            # Select items and condition
-            keep_columns = items_list + ['condition']
-
-            df = rating_df[rating_df.columns.intersection(keep_columns)]
-            # Rename columns to replace ' ' with '.'
-
-            df = df.rename(columns=lambda x: x.replace(' ', '.'))
-            # Assign PID
-            df.loc[:, 'pid'] = ['pid{}'.format(i + 1) for i in range(len(df))]
-
-            # Convert into long format with columns item, rating, condition, pid
-            id_vars = ['condition', 'pid']
-            value_vars = items_list_R
-            df = pd.melt(
-                frame=df,
-                id_vars=id_vars,
-                value_vars=value_vars,
-                var_name='item',
-                value_name='rating'
-            )
-
-            # Add group as a column
-            df.loc[:, 'category'] = df['item'].apply(lambda x : item_group_mapping[x])
-
-            save_path = os.path.join(save_dir, '{}.csv'.format(source))
-            utils.write_file(df, save_path, overwrite=overwrite)
-            path_dictionary[source] = save_path
-        path_dictionary_save_path = os.path.join(save_dir, 'paths.json')
-        utils.write_file(path_dictionary, path_dictionary_save_path, overwrite=overwrite)
-
-def copy_groupings(groupings,
-                   all_items=None,
-                   save_dir=None,
-                   overwrite=True):
-    '''
-    Rewrite groupings so they are stored in separate files for each category & replace ' '' with '.' for R
-    '''
-    utils.ensure_dir(save_dir)
-
-    if all_items is None:
-        accumulate_items = True
-    else:
-        all_items = [item.replace(' ', '.').replace('-', '.') for item in all_items]
-        accumulate_items = False
-    for grouping_source, grouping in groupings.items():
-        if accumulate_items:
-            all_items = []
-        for category_name, items in grouping.items():
-            key = '{}_{}'.format(grouping_source, category_name)
-            items = [item.replace(' ', '.').replace('-', '.') for item in items]
-
-            save_path = os.path.join(save_dir, '{}_items.txt'.format(key))
-            utils.write_file(items, save_path, overwrite=overwrite)
-            if accumulate_items:
-                all_items += items
-        # Name the file based on grouping source just to make downstream code easier
-        all_items_save_path = os.path.join(save_dir, '{}_items.txt'.format(grouping_source))
-        utils.write_file(all_items,all_items_save_path, overwrite=overwrite)
-
 def _format_and_pivot_emmeans_df(emmeans_df,
                                  target_column):
     '''
@@ -1113,7 +1023,11 @@ def save_r_format(attitudes_df,
         r_df = attitudes_df.loc[:, (column, 'condition')]
         utils.write_file(r_df, save_path, overwrite=overwrite)
 
+'''
 
+EXPLORATORY ANALYSIS
+
+'''
 '''
 Code for identifying individuals with high leverage
 '''
@@ -1535,6 +1449,11 @@ def calculate_iir(rating_df,
 
     return results
 
+'''
+
+VISUALIZATIONS
+
+'''
 '''
 Visualize factor loadings
 '''
