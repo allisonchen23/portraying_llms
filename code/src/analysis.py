@@ -847,7 +847,7 @@ Code for formatting data from EMMeans
 
 def read_emmeans_single_variable(results_path,
                                  grouping_source,
-                                 variable_name='condition',
+                                 variable_name='portrayal',
                                  variable_values=['Baseline', 'Mechanistic', 'Functional', 'Intentional'],
                                  save_dir=None,
                                  overwrite=True):
@@ -923,10 +923,10 @@ def read_emmeans_single_variable(results_path,
         condition_means.append(mean)
         condition_errors.append(error)
 
-        if variable_name == 'condition':
+        if variable_name == 'portrayal':
             means.append(condition_means)
             errors.append(condition_errors)
-        elif variable_name == 'group':
+        elif variable_name == 'category':
             means.append(condition_means[0])
             errors.append(condition_errors[0])
         else:
@@ -969,8 +969,10 @@ def read_emmeans_marginalized_result(results_path,
 
     df = None
     if save_dir is not None:
-        if grouping_source == "weisman" or grouping_source == "colombatto" or grouping_source == "factor_analysis":
-            csv_save_path = os.path.join(save_dir, '{}_emmeans_condition_by_group.csv'.format(grouping_source))
+        # if grouping_source == "weisman" or grouping_source == "colombatto" or grouping_source == "factor_analysis":
+        #     csv_save_path = os.path.join(save_dir, '{}_emmeans_condition_by_group.csv'.format(grouping_source))
+        if grouping_source == "body-heart-mind" or grouping_source == "factor_analysis":
+            csv_save_path = os.path.join(save_dir, "{}.csv".format(grouping_source))
         elif grouping_source == "item_level": # Assumes item lev
             csv_save_path = os.path.join(save_dir, "item_means.csv")
         elif grouping_source == "factor_analysis":
@@ -986,7 +988,7 @@ def read_emmeans_marginalized_result(results_path,
 
     if df is None:
         # Get the start index of the EMMeans information
-        emmeans_start = line_idx_dict['$`emmeans of condition | {}`'.format(marginalized_var)] + 1
+        emmeans_start = line_idx_dict['$`emmeans of portrayal | {}`'.format(marginalized_var)] + 1
         emmeans_list = results_list[emmeans_start:emmeans_start + emmeans_length]
 
         columns = None
@@ -1002,7 +1004,7 @@ def read_emmeans_marginalized_result(results_path,
                 group = line[-1][:-1] # Exclude the semi colon
 
             # Encountered header for the table
-            elif line[0] == 'condition':
+            elif line[0] == 'portrayal':
                 for col in line:
                     if col not in df_dict:
                         df_dict[col] = []
@@ -1030,9 +1032,9 @@ def read_emmeans_marginalized_result(results_path,
         condition_means = []
         condition_errors = []
         for value in marginalized_var_values:
-            mean = float(df[(df['condition'] == condition) & (df[marginalized_var] == value)]['emmean'].iloc[0])
-            lower_cl = float(df[(df['condition'] == condition) & (df[marginalized_var] == value)]['lower.CL'].iloc[0])
-            upper_cl = float(df[(df['condition'] == condition) & (df[marginalized_var] == value)]['upper.CL'].iloc[0])
+            mean = float(df[(df['portrayal'] == condition) & (df[marginalized_var] == value)]['emmean'].iloc[0])
+            lower_cl = float(df[(df['portrayal'] == condition) & (df[marginalized_var] == value)]['lower.CL'].iloc[0])
+            upper_cl = float(df[(df['portrayal'] == condition) & (df[marginalized_var] == value)]['upper.CL'].iloc[0])
 
             # Error is Confidence Interval (output is 95% CI)
             error = (upper_cl - lower_cl) / 2
@@ -1668,14 +1670,13 @@ def _format_and_pivot_emmeans_df(emmeans_df,
         pivot_df : pd.DataFrame
             pivoted version of emmeans_df, preparation for graphing
     '''
-    print(emmeans_df.head())
     # Calculate 95% CI Error Values
     emmeans_df['ci_error'] = (emmeans_df['upper.CL'] - emmeans_df['lower.CL']) / 2
     # Keep only graphing relevant columns
     if target_column is not None:
-        emmeans_df = emmeans_df[['condition', 'emmean', 'ci_error', target_column]]
+        emmeans_df = emmeans_df[['portrayal', 'emmean', 'ci_error', target_column]]
     else:
-        emmeans_df = emmeans_df[['condition', 'emmean', 'ci_error']]
+        emmeans_df = emmeans_df[['portrayal', 'emmean', 'ci_error']]
 
     # Cleanup
     emmeans_df = emmeans_df.rename({'emmean': 'mean'}, axis=1)
@@ -1685,7 +1686,7 @@ def _format_and_pivot_emmeans_df(emmeans_df,
         emmeans_df[target_column] = emmeans_df[target_column].apply(lambda x : x.replace('.', ' '))
         pivot_df = emmeans_df.pivot_table(
             index=target_column,
-            columns='condition',
+            columns='portrayal',
             values=['mean', 'ci_error']
         )
         pivot_df.columns = ['{}-{}'.format(condition, metric) for condition, metric in pivot_df.columns]

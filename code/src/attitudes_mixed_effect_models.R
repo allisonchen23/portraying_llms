@@ -14,7 +14,7 @@ attitude_analysis <- function(attitude,
 
   # Make file to save results
   save_results_path <- sprintf("%s/%s_results.txt", save_dir, attitude)
-
+  cat("Saving results to", save_results_path, "\n")
   # Convert portrayal to categorical factor
   df$portrayal <- factor(df$condition, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
 

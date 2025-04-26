@@ -11,7 +11,6 @@ emm_options(pbkrtest.limit = 20000)
 rating_analysis <- function(df_path,
                             save_dir,
                             save_txt = TRUE,
-                            # custom_fa = FALSE,
                             n_components = NULL) {
   if (!is.null(n_components)) {
     category <- sprintf("%d_components", n_components)
@@ -20,6 +19,7 @@ rating_analysis <- function(df_path,
     category <- "body-heart-mind"
   }
   save_results_path <- sprintf("%s/%s_results.txt", save_dir, category)
+  cat("Saving results to", save_results_path)
   # Load data frame & column items
   df <- read.csv(df_path)
 
@@ -46,10 +46,8 @@ rating_analysis <- function(df_path,
 
   # Baseline model without interaction
   no_interaction_model <- lmer(rating ~ portrayal + category + (1 | pid), data = df)
-
   # Baseline model with category only
   category_model <- lmer(rating ~ category + (1 | pid), data = df)
-
   # Null model without the portrayal
   null_model <- lmer(rating ~ (1 | pid), data = df)
 
@@ -62,6 +60,44 @@ rating_analysis <- function(df_path,
   }
 }
 
+item_level_rating_analysis <- function(df_path,
+                                       save_dir,
+                                       save_txt = TRUE) {
+  save_results_path <- sprintf("%s/results.txt", save_dir)
+  cat("Saving results to", save_results_path)
+  df <- read.csv(df_path)
+  # cols <- unique(df$item)
+
+  # Convert condition to categorical factor called portrayal
+  df$portrayal <- factor(df$condition, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
+
+  if (save_txt) {
+    sink(file = save_results_path)
+  }
+
+  # Create model using just item and portrayal
+  model <- lmer(rating ~ portrayal * item + (1 | pid), data = df)
+  cat("\n\n", "Model Summary:", "\n")
+  print(summary(model))
+
+  # Post-Hoc Tests
+  cat("\n\n", "EMMeans Analysis for portrayal:", "\n")
+  print(emmeans(model, list(pairwise ~ portrayal), adjust = "tukey"))
+  cat("\n\n", "EMMeans Analysis for portrayal marginalized over item:", "\n")
+  print(emmeans(model, list(pairwise ~ portrayal | item), adjust = "tukey"))
+
+  # Baseline models
+  no_interaction_model <- lmer(rating ~ portrayal + item + (1 | pid), data = df)
+  no_item_model <- lmer(rating ~ portrayal + (1 | pid), data = df)
+  null_model <- lmer(rating ~ (1 | pid), data=df)
+  cat("ANOVA null -> no interaction -> interaction", "\n")
+  print(anova(null_model, no_item_model, no_interaction_model, model))
+
+  # Redirect outputs back to console
+  if (save_txt) {
+    sink(file = NULL)
+  }
+}
 # # Variables
 # exp_name <- "pilot_v3_11142024"
 # category <- "weisman"
