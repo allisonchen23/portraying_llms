@@ -26,14 +26,14 @@ def get_stats_df(df, stats, axis_name):
     '''
     # Convert data to float
     df = df.map(lambda x: pd.to_numeric(x, errors='coerce'))
-    
+
     stats_df = {}
     for stat in stats:
         if stat == 'mean':
             calculated = df.mean(axis=0) # automatically skips NaN
         elif stat == 'std':
             calculated = df.std(axis=0) # automatically skips NaN
-        elif stat == 'median': 
+        elif stat == 'median':
             calculated = df.median(axis=0) # automatically skips NaN
         else:
             raise ValueError("Stat {} not supported".format(stat))
@@ -47,9 +47,9 @@ def get_stats_df(df, stats, axis_name):
 Functions for timing analyses
 '''
 
-def time_analysis(df, 
-                  mapping, 
-                  metadata_mapping, 
+def time_analysis(df,
+                  mapping,
+                  metadata_mapping,
                   units='minutes',
                   condition='all',
                   save_dir=None,
@@ -64,10 +64,10 @@ def time_analysis(df,
         if os.path.exists(save_path) and not overwrite:
             utils.informal_log("Time analysis exists at {}".format(save_path))
             return utils.read_file(save_path)
-    
+
     # Drop rows that are not responses
     df = df[df['ResponseId'].str.startswith('R_')]
-    
+
     time_df = {}
     df_columns = df.columns
     n_rows = None
@@ -75,17 +75,17 @@ def time_analysis(df,
     # Keep metadata
     for mdata_col_name, mdata_new_col_name in metadata_mapping.items():
         column = df[mdata_col_name]
-        
+
         if mdata_col_name == 'Duration (in seconds)' and units == 'minutes':
             column = pd.to_numeric(df[mdata_col_name], errors='coerce')
-            column /= 60 
+            column /= 60
         time_df[mdata_new_col_name] = column
-        
+
         if n_rows is None:
             n_rows = len(column)
         else:
             assert len(column) == n_rows, "Number of rows {} did not match expected ({})".format(len(column), n_rows)
-    
+
     section_columns = {}
     for section, col_mapping in mapping.items():
         # Keep track of new column names for all columns in this section
@@ -100,7 +100,7 @@ def time_analysis(df,
                 # Select subset of columns that belong to timing of survey
                 survey_time_df = df[df.columns[df.columns.str.contains(pat=col_name)]]  # N x 40
 
-                
+
                 assert survey_time_df.isnull().sum().sum() == 0
                 # Convert data type from str -> float
                 survey_time_df = survey_time_df.astype(float)
@@ -109,11 +109,11 @@ def time_analysis(df,
 
                     # Add condition & PID; rename columns
                     save_survey_time_df = pd.concat([survey_time_df, df['CONDITION'], df['PROLIFIC_PID']], axis=1)
-                    save_survey_time_df.rename({'CONDITION': 'condition', 'PROLIFIC_PID': 'participant_id'}, axis=1)                                                    
+                    save_survey_time_df.rename({'CONDITION': 'condition', 'PROLIFIC_PID': 'participant_id'}, axis=1)
                     utils.write_file(save_survey_time_df, survey_time_save_path, overwrite=overwrite)
                 # Sum across columns
                 column = survey_time_df.sum(axis=1)
-                
+
                 # Also add median, min time on each survey page
                 median_time = survey_time_df.median(axis=1)
                 min_time = survey_time_df.min(axis=1)
@@ -125,8 +125,8 @@ def time_analysis(df,
                 time_df['median_time_per_survey_page'] = median_time
                 time_df['min_time_per_survey_page'] = min_time
                 time_df['max_time_per_survey_page'] = max_time
-                
-        
+
+
             # Otherwise each item is from a single column
             else:
                 if col_name not in df_columns:
@@ -135,10 +135,10 @@ def time_analysis(df,
                     utils.informal_log("Column {} ({}) not in DF columns in {} condition".format(
                         col_name, new_col_name, condition))
                     continue
-                
+
                 # Convert to floats & add as new column in new DF
                 column = pd.to_numeric(df[col_name], errors='coerce')
-            
+
             if n_rows is None:
                 n_rows = len(column)
             else:
@@ -151,7 +151,7 @@ def time_analysis(df,
             cur_section_columns.append(new_col_name)
 
         section_columns[section] = cur_section_columns
-        
+
     time_df = pd.DataFrame(time_df)
 
     # Create columns for mechanistic, functional, and intentional videos
@@ -170,8 +170,8 @@ def time_analysis(df,
 
     return time_df
 
-def time_stats(time_df, 
-               save_dir, 
+def time_stats(time_df,
+               save_dir,
                units='minutes',
                condition='all',
                overwrite=False):
@@ -185,15 +185,15 @@ def time_stats(time_df,
         if os.path.exists(save_path) and not overwrite:
             utils.informal_log("Timing statistics exists at {}".format(save_path))
             return utils.read_file(save_path)
-        
+
     stats_df = get_stats_df(
-        df=time_df, 
-        stats=['mean', 'std', 'median'], 
+        df=time_df,
+        stats=['mean', 'std', 'median'],
         axis_name='section')
 
     if save_dir is not None:
         utils.write_file(stats_df, save_path, overwrite=overwrite)
-        
+
     return stats_df
 
 '''
@@ -210,7 +210,7 @@ def get_demographics(df,
         save_path = os.path.join(save_dir, 'demographics.csv')
         if os.path.exists(save_path) and not overwrite:
             return utils.read_file(save_path)
-        
+
     demographics_dfs = []
     for q_id, variable in demographic_qs.items():
         if q_id in df.columns:
@@ -234,9 +234,9 @@ def get_demographics(df,
             continue
 
         demographics_dfs.append(value_counts)
-    
+
     demographics_df = pd.concat(demographics_dfs)
-    
+
     if save_dir is not None:
         utils.write_file(demographics_df, save_path, overwrite=overwrite)
 
@@ -258,7 +258,7 @@ def save_frq(df,
         utils.informal_log("{} [{}]: \n\t{}".format(
             row['PROLIFIC_PID'], row[addit_q_id], row[q_id]
         ), frq_save_path)
-        
+
     return frq_df
 
 
@@ -279,14 +279,14 @@ def exclude_min_responses(df,
     '''
     if k == 0:
         return df
-    
+
     # Sum up NaNs per column (item)
     n_nan_item = df.isnull().sum(axis=0)
     utils.informal_log("Pre-filtering:")
     for idx, count in n_nan_item.items():
         if count > 0:
             utils.informal_log("{} has {} NaNs".format(idx, count))
-    
+
     # Sum up number of NaNs per row (participant)
     n_responses = n_total - df.isnull().sum(axis=1)
 
@@ -312,7 +312,7 @@ def _verify_post_attention_check(df):
 
     selection1 = ac_response.str.contains('understanding how others are feeling').to_numpy()
     selection2 = ac_response.str.contains('doing computations').to_numpy()
-    
+
     pass_ac = selected_correct & selection1 & selection2
 
     return df[pass_ac]
@@ -326,7 +326,7 @@ def _verify_insurvey_attention_check(df):
 
     return df[pass_ac]
 
-def perform_exclusions(df, 
+def perform_exclusions(df,
                        # Exclusion parameters
                        min_survey_time,
                        min_median_per_page_time,
@@ -336,10 +336,10 @@ def perform_exclusions(df,
     '''
     Given raw DF, return rows that meet minimum time requirement and pass the attention check
     '''
-    
+
     # Drop rows that are not responses
     df = df[df['ResponseId'].str.startswith('R_')]
-    
+
     # Keep rows that spent at least min_survey_time minutes
     if min_survey_time is not None:
         df = df[df['survey_time'] >= min_survey_time]
@@ -355,7 +355,7 @@ def perform_exclusions(df,
             len(df), min_median_per_page_time))
     else:
         utils.informal_log("No exclusions for minimum median amount of time")
-        
+
     # Keep rows that have at most a difference between max and median time per page of max_median_diff
     # if max_median_diff is not None:
     #     select = df['max_time_per_survey_page'] - df['median_time_per_survey_page'] <= max_median_diff
@@ -381,13 +381,13 @@ def perform_exclusions(df,
             len(df), manual_exclusions))
     else:
         utils.informal_log("No manual exclusions performed")
-    
+
     utils.informal_log("Number of rows: {}".format(len(df)))
     utils.informal_log("Number of rows in baseline: {}".format(len(df[df['CONDITION'] == 'Baseline'])))
     utils.informal_log("Number of rows in mechanistic: {}".format(len(df[df['CONDITION'] == 'Mechanistic'])))
     utils.informal_log("Number of rows in functional: {}".format(len(df[df['CONDITION'] == 'Functional'])))
     utils.informal_log("Number of rows in intentional: {}".format(len(df[df['CONDITION'] == 'Intentional'])))
-     
+
     return df
 
 
@@ -411,7 +411,7 @@ def get_mc_mapping(items,
     n_items = len(items)
     assert n_pages * n_items_per_page == n_items, "With {} pages and {} items per page, expected {} items, but received {}".format(
         n_pages, n_items_per_page, n_pages * n_items_per_page, n_items)
-    
+
     mapping = {}
 
     for page_idx in range(n_pages):
@@ -434,18 +434,18 @@ def get_mc_mapping(items,
 
 def _add_groupings(rating_df,
                    groupings):
-    
+
     # Add columns for each category dimension
     for grouping_source, grouping in groupings.items():
         for category_name, category_mental_states in grouping.items():
             column_name = '{}_{}'.format(grouping_source, category_name)
             if column_name in rating_df.columns:
                 continue
-            
+
             # Get columns that make up this category and calculate mean
             category_df = rating_df[rating_df.columns.intersection(category_mental_states)]
             category_mean = np.nanmean(category_df.to_numpy(), axis=1)
-            
+
             # Assign to column
             rating_df[column_name] = category_mean
     return rating_df
@@ -476,21 +476,21 @@ def get_ratings(df,
         if os.path.exists(save_path) and not overwrite:
             utils.informal_log("Ratings exists at {}".format(save_path))
             return utils.read_file(save_path)
-    
+
     '''
     Create rating DF for main analysis
     '''
     # Only keep columns that are mental states
     rating_df = df[mc_mapping.keys()]
     rating_df = rating_df.rename(columns=mc_mapping)
-        
+
     # Since 1, 4, & 7 options have text, convert them to just numbers
     # TODO: Remove this line due to a discrepancy between experimental and baseline
     rating_df = rating_df.replace({'1 (Not at all)': '1 (Not at all capable)'})
     rating_df = rating_df.replace({'1 (Not at all capable)': '1', '7 (Highly capable)': '7', '4 (Somewhat capable)':  '4'})
     # Convert data to float
     rating_df = rating_df.map(lambda x: pd.to_numeric(x, errors='raise'))
-    
+
     # Add mean rating for all items
     items = mc_mapping.values()
     mean_ratings = rating_df[rating_df.columns.intersection(items)].mean(axis=1)
@@ -500,15 +500,15 @@ def get_ratings(df,
     rating_df = _add_groupings(
         rating_df=rating_df,
         groupings=groupings)
-    
-    
-    
+
+
+
     # Save condition
     rating_df['condition'] = df['CONDITION']
 
     # Save participant ID
     rating_df['participant_id'] = df['PROLIFIC_PID']
-    
+
     if save_dir is not None:
         utils.write_file(rating_df, save_path, overwrite=overwrite)
 
@@ -519,7 +519,7 @@ def get_ratings(df,
     utils.informal_log("Number of rows in mechanistic: {}".format(len(rating_df[rating_df['condition'] == 'Mechanistic'])))
     utils.informal_log("Number of rows in functional: {}".format(len(rating_df[rating_df['condition'] == 'Functional'])))
     utils.informal_log("Number of rows in intentional: {}".format(len(rating_df[rating_df['condition'] == 'Intentional'])))
-                       
+
     return rating_df
 
 def _mean_ratings(rating_df,
@@ -529,7 +529,7 @@ def _mean_ratings(rating_df,
     '''
     Given ratings data, return DF with statistics for each mental state
     '''
-    
+
     # If file exists, return it
     if save_dir is not None:
         filename = 'rating_stats.csv'
@@ -539,20 +539,20 @@ def _mean_ratings(rating_df,
         if os.path.exists(save_path) and not overwrite:
             utils.informal_log("Rating statistics exists at {}".format(save_path))
             return utils.read_file(save_path)
-        
+
     stats_df = {}
-    
+
     # Drop metadata columns
     if 'condition' in rating_df.columns:
         rating_df = rating_df.drop('condition', axis=1)
     if 'participant_id' in rating_df.columns:
         rating_df = rating_df.drop('participant_id', axis=1)
-            
+
     stats_df['mental_state'] = rating_df.columns
     # means = rating_df.mean(axis=0) # automatically skips NaN
     means = np.nanmean(rating_df.to_numpy(), axis=0)
     stats_df['mean'] = means
- 
+
     # stds = rating_df.std(axis=0) # automatically skips NaN
     stds = np.nanstd(rating_df.to_numpy(), axis=0)
     stats_df['std'] = stds
@@ -592,12 +592,12 @@ def mean_ratings(rating_df,
                 overwrite=overwrite
             )
             stats_dfs[condition.lower()] = condition_stats_df
-            
-    
+
+
     return stats_dfs
 
-    
-def create_master_stats(stats_dfs, 
+
+def create_master_stats(stats_dfs,
                         join_col_name='mental_state',
                         save_dir=None,
                         overwrite=False):
@@ -610,7 +610,7 @@ def create_master_stats(stats_dfs,
         if os.path.exists(save_path) and not overwrite:
             utils.informal_log("Master ratings exists at {}".format(save_path))
             return utils.read_file(save_path)
-        
+
     df_list = []
     mental_states = None
     for condition, df in stats_dfs.items():
@@ -623,10 +623,10 @@ def create_master_stats(stats_dfs,
 
     # Iteratively merge DFs on the join_col_name column
     df = functools.reduce(lambda left, right: pd.merge(left,right,on=join_col_name), df_list)
-    
+
     if save_dir is not None:
         utils.write_file(df, save_path, overwrite=overwrite)
-    
+
     return df
 
 '''
@@ -675,7 +675,7 @@ def _get_errors(df,
         df=len(error_df)-1,
         loc=np.mean(error_df),
         scale=sem)
-    
+
     assert np.abs(np.mean(ci) - np.mean(error_df)) < 1e-5
 
     return float(std), float(sem), ci
@@ -702,7 +702,7 @@ def prep_graph_data(rating_df,
     participant_conditions = rating_df['condition']
     # condition_set = ['Baseline', 'Mechanistic', 'Functional', 'Intentional'] # list(set(participant_conditions))
 
-    graph_data = []  # n_conditions x n_groups array 
+    graph_data = []  # n_conditions x n_groups array
     dim_axis_dict = {
         'participants': 1,
         'items': 0,
@@ -711,7 +711,7 @@ def prep_graph_data(rating_df,
     errors = []  # n_conditions x n_groups array for CI error bars
     jitter_ys = []  # (n_conditions * n_groups) x variable_length array
     group_means = []  # n_groups array
-    
+
     results = {}
     if all_items is not None:
         condition_only_results = {
@@ -726,7 +726,7 @@ def prep_graph_data(rating_df,
         condition_df = rating_df[participant_conditions == condition] # Select rows
         condition_results = {}
         if all_items is not None:
-           
+
             # Get mean, errors across all categories for this condition
             c_mean = np.nanmean(condition_df.to_numpy())
             std, sem, ci = _get_errors(
@@ -734,7 +734,7 @@ def prep_graph_data(rating_df,
                 error_dim=ci_dim,
                 dim_axis_dict=dim_axis_dict)
             ci_error = (ci[1] - ci[0]) / 2
-            
+
             condition_only_results[condition] = {
                 'mean': c_mean,
                 'std_{}'.format(ci_dim): std,
@@ -749,15 +749,15 @@ def prep_graph_data(rating_df,
         condition_means = []
         condition_errors = []
         condition_jitters = []
-        
-        
+
+
         for group_name, group_mental_states in groupings.items():
             condition_group_results = {}
             condition_group_df = condition_df[rating_df.columns.intersection(group_mental_states)]
             # Check that the number of columns in resulting df is same as number of items in group
             assert len(group_mental_states) == len(condition_group_df.columns), "Expected {} items in group, only filtered out {} in DF".format(
                 len(group_mental_states), len(condition_group_df.columns))
-            
+
             # condition_means.append(condition_group_df.mean(axis=None, skipna=True))
             mean = np.nanmean(condition_group_df.to_numpy())
             condition_means.append(mean)
@@ -781,10 +781,10 @@ def prep_graph_data(rating_df,
                 pass
             elif jitter_dim == 'participants':
                 condition_jitters.append(np.nanmean(condition_group_df.to_numpy(), axis=1).tolist())
-                
+
             elif jitter_dim == 'items':
                 condition_jitters.append(np.nanmean(condition_group_df.to_numpy(), axis=0).tolist())
-                
+
             elif jitter_dim == 'both':
                 condition_jitters.append(condition_group_df.to_numpy().flatten().tolist())
 
@@ -835,10 +835,10 @@ def prep_graph_data(rating_df,
                 'graph_condition_data.json'
             )
             utils.write_file(condition_only_results, condition_only_results_save_path, overwrite=overwrite)
-    
+
     if all_items is not None:
         return results, condition_only_results
-    else: 
+    else:
         return results
 
 '''
@@ -863,7 +863,7 @@ def read_emmeans_single_variable(results_path,
         save_dir : str
         overwrite : bool
     '''
-    # Each EMMeans table is 5 rows 
+    # Each EMMeans table is 5 rows
     emmeans_length = len(variable_values) + 1
 
     df = None
@@ -899,9 +899,9 @@ def read_emmeans_single_variable(results_path,
                     # Try converting to float
                     try:
                         df_dict[column].append(float(line[idx]))
-                    except: 
+                    except:
                         df_dict[column].append(line[idx])
-        
+
         df = pd.DataFrame(df_dict)
         if save_dir is not None:
             utils.write_file(df, csv_save_path, overwrite=overwrite)
@@ -919,7 +919,7 @@ def read_emmeans_single_variable(results_path,
 
         # Error is Confidence Interval (output is 95% CI)
         error = (upper_cl - lower_cl) / 2
-        
+
         condition_means.append(mean)
         condition_errors.append(error)
 
@@ -965,7 +965,7 @@ def read_emmeans_marginalized_result(results_path,
         raise ValueError("No value passed for marginalized_var_values")
 
     # Each group's EMMeans table is 6 rows (including space separator)
-    emmeans_length = len(marginalized_var_values) * (len(conditions) + 2) 
+    emmeans_length = len(marginalized_var_values) * (len(conditions) + 2)
 
     df = None
     if save_dir is not None:
@@ -994,13 +994,13 @@ def read_emmeans_marginalized_result(results_path,
         df_dict = {}
         for line in emmeans_list:
             line = line.split()
-            
+
             if len(line) == 0:
                 continue
             # Encountered data for a new group
             if line[0] == marginalized_var:
                 group = line[-1][:-1] # Exclude the semi colon
-                    
+
             # Encountered header for the table
             elif line[0] == 'condition':
                 for col in line:
@@ -1014,7 +1014,7 @@ def read_emmeans_marginalized_result(results_path,
                     # Try converting to float
                     try:
                         df_dict[column].append(float(line[idx]))
-                    except: 
+                    except:
                         df_dict[column].append(line[idx])
                 df_dict[marginalized_var].append(group)
         # Add last table
@@ -1022,7 +1022,7 @@ def read_emmeans_marginalized_result(results_path,
 
         if save_dir is not None:
             utils.write_file(df, csv_save_path, overwrite=overwrite)
-    
+
     # Get data in format needed for analysis.grouped_bar_graphs (dict with 'means', 'errors')
     means = []
     errors = []
@@ -1036,7 +1036,7 @@ def read_emmeans_marginalized_result(results_path,
 
             # Error is Confidence Interval (output is 95% CI)
             error = (upper_cl - lower_cl) / 2
-            
+
             condition_means.append(mean)
             condition_errors.append(error)
         means.append(condition_means)
@@ -1047,7 +1047,7 @@ def read_emmeans_marginalized_result(results_path,
         'errors': errors,
     }
     # Get group means
-    if marginalized_var == 'group': 
+    if marginalized_var == 'group':
         group_emmeans_start_idx = line_idx_dict['$`emmeans of group`'] + 2 # Skip the header
         group_emmeans_list = results_list[group_emmeans_start_idx:group_emmeans_start_idx + len(marginalized_var_values)]
 
@@ -1123,16 +1123,16 @@ def grouped_bar_graphs(groups,
             fig_size = (7, 5)
         legend_loc = 'upper right'
     # Axis Labels
-    
+
     xlabel = ""
     ylabel = "Rating (1-7)"
- 
+
 
     yticks = [i for i in range(1, min(8, math.floor(ylim[1]) + 1))]
     yticklabels = [str(i) for i in yticks]
 
     # Plot bar graph on figure
-    
+
     fig, ax, adjusted_xpos = visualizations.bar_graph(
         data=means,
         errors=errors,
@@ -1152,7 +1152,7 @@ def grouped_bar_graphs(groups,
         color_idxs=color_idxs,
         show=False
     )
-    
+
     # Extract group means
     if 'group_means' in graph_data:
         group_means = graph_data['group_means']
@@ -1166,7 +1166,7 @@ def grouped_bar_graphs(groups,
                 group_mean,
                 xmin=start,
                 xmax=end)
-        
+
     # Perform jittering & add to plot
     if jitter_dim is not None:
         assert 'jitter_ys' in graph_data
@@ -1181,7 +1181,7 @@ def grouped_bar_graphs(groups,
             legend_locs = ['upper left', 'upper center', 'upper right']
         else:
             raise ValueError("{} groups not yet supported".format(n_groups))
-        
+
         for group_idx in range(n_groups):
             group_points = []
             for condition_idx in range(len(jitter_ys)):
@@ -1202,21 +1202,21 @@ def grouped_bar_graphs(groups,
             # Conver to numpy array and transpose
             group_points = np.array(group_points)  # N_conditions X N_items_in_group X 2
             group_points = np.swapaxes(group_points, 0, 1) # N_items_in_group X N_conditions X 2
-            
+
 
             # Separate X and Y
             line_xs = group_points[..., 0]
             line_ys = group_points[..., 1]
-            
+
             # Annotations for each line
             cur_group_items = group_items[group_idx]
             annotations = []
             for item in cur_group_items:
                 annotations.append([item, "","",""])
-            
+
             if line_start is None or line_start >= len(cur_group_items):
                 continue
-            
+
             # If pass in items to annotate, that takes precedence over indices
             if annotate_items is not None:
                 select_idxs = np.array([True if item in annotate_items else False for item in cur_group_items])
@@ -1241,9 +1241,9 @@ def grouped_bar_graphs(groups,
                 labels=labels,
                 scatter=True,
                 line=True)
-            
+
             lines = ax.get_lines()
-    
+
     if save_dir is not None:
         if debug:
             save_dir = os.path.join('debug', save_dir)
@@ -1263,7 +1263,7 @@ def grouped_bar_graphs(groups,
                     filename += "-items_{}_{}".format(line_start, line_start + line_n_show)
             else:
                 filename += "-items_custom_{}".format(len(annotate_items))
-            
+
         filename += ".{}".format(save_ext)
         save_path = os.path.join(save_dir, filename)
         if not os.path.exists(save_path) or overwrite:
@@ -1271,14 +1271,14 @@ def grouped_bar_graphs(groups,
             utils.informal_log("Saved graph to {}".format(save_path))
         else:
             utils.informal_log("Path at {} exists and not overwriting".format(save_path))
-        
+
         # # Save JSON results
         # results_save_path = os.path.join(save_dir, 'group_graph_{}-ci_{}_data.json'.format(
         #     grouping_source, ci_dim
         # ))
         # utils.write_file(results, results_save_path, overwrite=overwrite)
 
-        
+
     plt.show()
 
 '''
@@ -1295,13 +1295,13 @@ def correlation_matrix(rating_df,
     }
     line_color = 'black'
     n_per_condition = len(rating_df) / len(condition_order)
-    
+
     # Get number per condition
     n_per_condition_dict = {}
     for condition in condition_order.keys():
         print(condition)
         n_per_condition_dict[condition] = len(rating_df[rating_df['condition'] == condition])
-        
+
     # Sort by condition, grouping conditions together
     rating_df = rating_df.sort_values(by='condition', key=lambda x: x.map(condition_order))
     rating_df = rating_df.reset_index(drop=True)
@@ -1314,7 +1314,7 @@ def correlation_matrix(rating_df,
     # If pass in a list of items, select these columns
     if group_items is not None:
         rating_df = rating_df[group_items]
-    
+
     # Convert into an N x K numpy array
     # ratings = rating_df.to_numpy()
 
@@ -1324,10 +1324,10 @@ def correlation_matrix(rating_df,
     # Plot correlation matrix w/colorbar
     im = plt.matshow(corr)
     plt.colorbar(im)
-    
+
     # Add title
     plt.title("Spearman Correlation Between Participants", y=1.1)
-    
+
     # Annotations for Condition
     n_running_responses = 0
     condition_pid_dict = {}
@@ -1357,7 +1357,7 @@ def correlation_matrix(rating_df,
         # Get list of PIDs in this condition
         condition_pids = condition_pid_df[condition_pid_df['condition'] == condition_name]['participant_id'].to_list()
         condition_pid_dict[condition_name] = condition_pids
-    
+
     # Remove axis tick labels
     plt.xticks([])
     plt.yticks([])
@@ -1407,25 +1407,25 @@ def prepare_R_df(rating_df,
             items_list_R = list(item_group_mapping.keys())
             # Select items and condition
             keep_columns = items_list + ['condition']
-            
+
             df = rating_df[rating_df.columns.intersection(keep_columns)]
             # Rename columns to replace ' ' with '.'
-            
+
             df = df.rename(columns=lambda x: x.replace(' ', '.'))
             # Assign PID
             df.loc[:, 'pid'] = ['pid{}'.format(i + 1) for i in range(len(df))]
-            
+
             # Convert into long format with columns item, rating, condition, pid
             id_vars = ['condition', 'pid']
             value_vars = items_list_R
             df = pd.melt(
                 frame=df,
                 id_vars=id_vars,
-                value_vars=value_vars, 
+                value_vars=value_vars,
                 var_name='item',
                 value_name='rating'
             )
-            
+
             # Add group as a column
             df.loc[:, 'category'] = df['item'].apply(lambda x : item_group_mapping[x])
 
@@ -1455,7 +1455,7 @@ def copy_groupings(groupings,
         for category_name, items in grouping.items():
             key = '{}_{}'.format(grouping_source, category_name)
             items = [item.replace(' ', '.').replace('-', '.') for item in items]
-            
+
             save_path = os.path.join(save_dir, '{}_items.txt'.format(key))
             utils.write_file(items, save_path, overwrite=overwrite)
             if accumulate_items:
@@ -1475,7 +1475,7 @@ def prepare_data_individual_items(df,
 
     Arg(s):
         df : pd.DataFrame of ratings
-        groupings : dict[str : dict[str : str]] 
+        groupings : dict[str : dict[str : str]]
             Outer dict is for Weisman/Colombatto, inner is for body/heart/mind/experience/intelligence -> items
         significant_items : list[str]
             list of items to mark with *
@@ -1485,7 +1485,7 @@ def prepare_data_individual_items(df,
     cols_to_drop = [col for col in df.columns if any(x in col for x in drop_list)]
     df = df.drop(columns=cols_to_drop)
 
-    
+
 
     # Set which columns to "keep" (id_vars) and which to unpivot (value_vars)
     value_vars = list(df.columns)
@@ -1499,11 +1499,11 @@ def prepare_data_individual_items(df,
         value_vars=value_vars,
         var_name='item',
         value_name='rating')
-    
+
     # Assert number of rows is correct
     assert len(return_df) == len(df) * 40, "Expected 40 items X {} participants = {} rows, have {} rows in total".format(
         len(df), len(df) * 40, len(return_df))
-    
+
     # Add the colombatto and weisman groupings columns
     for grouping_source, grouping in groupings.items():
         group_mapping = {}
@@ -1511,7 +1511,7 @@ def prepare_data_individual_items(df,
             for mental_state in category_mental_states:
                 group_mapping[mental_state] = category_name
         return_df[grouping_source] = return_df['item'].map(group_mapping)
-    
+
     # Rename columns with items that are significant
     if significant_items is not None and len(significant_items) > 0:
         rename_mapping = {}
@@ -1524,7 +1524,7 @@ def prepare_data_individual_items(df,
         return_df['item'] = return_df['item'].map(rename_mapping)
         # df = df.rename(columns=rename_mapping)
     return return_df
-    
+
 def get_y_order(groupings,
                 sort_columns,
                 ascending,
@@ -1558,7 +1558,7 @@ def get_y_order(groupings,
             for mental_state in category_mental_states:
                 group_mapping[mental_state] = category_name
         rating_stats_df.loc[:, grouping_source] = rating_stats_df.loc[:, 'mental_state'].map(group_mapping)
-    
+
     # Sort based on sort_columns
     rating_stats_df = rating_stats_df.sort_values(by=sort_columns, ascending=ascending)
 
@@ -1567,7 +1567,7 @@ def get_y_order(groupings,
     if significant_items is not None and len(significant_items) > 0:
         rename_mapping = {}
         for item in y_order:
-            if item in significant_items: 
+            if item in significant_items:
                 rename_mapping[item] = "{}*".format(item)
             else:
                 rename_mapping[item] = item
@@ -1595,7 +1595,7 @@ def plot_individual_items(df,
     color_keys = df[group_column].unique()
     palette = sns.color_palette("Set2", len(color_keys))
     color_map = dict(zip(color_keys, palette))
-    
+
     graph = sns.FacetGrid(
         df,
         col='condition',
@@ -1605,7 +1605,7 @@ def plot_individual_items(df,
         aspect=0.35,
         sharex=True,
         sharey=False)
-    
+
     graph.map_dataframe(
         sns.pointplot,
         x="rating",
@@ -1617,7 +1617,7 @@ def plot_individual_items(df,
         palette=color_map,
         linestyle='none',
         dodge=True)
-    
+
     # Get figure and axes for titles and labeling
     axes = graph.axes
     fig = graph.figure
@@ -1633,7 +1633,7 @@ def plot_individual_items(df,
                 labelsize=16
             )
             ax.set_ylabel("")
-        
+
         # Set axis titles based on condition
         ax.set_title("{}".format(conditions[idx]), fontsize=20)
 
@@ -1641,7 +1641,7 @@ def plot_individual_items(df,
         ax.set_xlabel("")
         ax.tick_params(axis='x', labelsize=16)
         ax.set_xticks([1, 2, 3, 4, 5, 6, 7])
-        
+
         # Set gridlines
         axes[idx] = ax.grid(True)
 
@@ -1674,7 +1674,7 @@ def _format_and_pivot_emmeans_df(emmeans_df,
     # Keep only graphing relevant columns
     if target_column is not None:
         emmeans_df = emmeans_df[['condition', 'emmean', 'ci_error', target_column]]
-    else: 
+    else:
         emmeans_df = emmeans_df[['condition', 'emmean', 'ci_error']]
 
     # Cleanup
@@ -1695,7 +1695,7 @@ def _format_and_pivot_emmeans_df(emmeans_df,
     return pivot_df
 
 def plot_individual_items_single_axis(emmeans_df,
-                                      
+
                                       item_group_dict,
                                       conditions,
                                       # Sort ascending (False for horiztonal pointplot, True for vertical)
@@ -1722,7 +1722,7 @@ def plot_individual_items_single_axis(emmeans_df,
         conditions : list[str]
             list of conditions in order
     '''
-    
+
     pivot_df = _format_and_pivot_emmeans_df(
         emmeans_df=emmeans_df,
         target_column='item')
@@ -1733,7 +1733,7 @@ def plot_individual_items_single_axis(emmeans_df,
 
     means = pivot_df[["mean-{}".format(condition) for condition in conditions]].to_numpy().T
     errors = pivot_df[["ci_error-{}".format(condition) for condition in conditions]].to_numpy().T
-    
+
     if orientation == 'horizontal':
         ylim = (-1, len(pivot_df))
         ytick_labels_list = pivot_df['item'].to_list()
@@ -1788,7 +1788,7 @@ def plot_individual_items_single_axis(emmeans_df,
             font_size_dict=font_size_dict,
             save_path=None,
             show=False)
-        
+
         # ax.set_ylim((0.5, 7.5))
         # ax.set_yticks(range(1, 8))
         # Rotate x-axis labels
@@ -1801,7 +1801,7 @@ def plot_individual_items_single_axis(emmeans_df,
         plt.tight_layout()
     else:
         raise ValueError("Orientation {} not supported".format(orientation))
-    
+
     # Color ytick_labels based on category
     if orientation == 'horizontal':
         tick_labels = ax.get_yticklabels()
@@ -1819,10 +1819,10 @@ def plot_individual_items_single_axis(emmeans_df,
     if save_path is not None:
         plt.savefig(save_path)
         utils.informal_log("Saved figure to {}".format(save_path))
-        
+
     if show:
         plt.show()
-    
+
     return fig, ax, ytick_labels_list
 
 def plot_category_items_single_axis(emmeans_df,
@@ -1850,7 +1850,7 @@ def plot_category_items_single_axis(emmeans_df,
     means = pivot_df[["mean-{}".format(condition) for condition in conditions]].to_numpy().T
     errors = pivot_df[["ci_error-{}".format(condition) for condition in conditions]].to_numpy().T
 
-    
+
     # Set y-limit
     ylim = (-1, len(pivot_df))
 
@@ -1874,7 +1874,7 @@ def plot_category_items_single_axis(emmeans_df,
         color_idxs=color_idxs,
         save_path=None,
         show=False)
-    
+
     # Color ytick_labels based on category
     ytick_labels = ax.get_yticklabels()
     for label in ytick_labels:
@@ -1890,10 +1890,10 @@ def plot_category_items_single_axis(emmeans_df,
     if save_path is not None:
         plt.savefig(save_path)
         utils.informal_log("Saved figure to {}".format(save_path))
-        
+
     if show:
         plt.show()
-    
+
     return fig, ax
 
 
@@ -1910,7 +1910,7 @@ def fa_plot(fa_groupings,
     # orientation = 'vertical' # Only relevant for pointplot
 
     # r_results_path = os.path.join(
-    #     R_results_dir, 
+    #     R_results_dir,
     #     '{}_components_results.txt'.format(n_factors))
     # if not os.path.exists(r_results_path):
     #     raise ValueError("Path to R results file {} does not exist".format(r_results_path))
@@ -2012,25 +2012,25 @@ def get_attitudes(df,
         if os.path.exists(save_path) and not overwrite:
             utils.informal_log("Attitudes CSV exists at {}".format(save_path))
             return utils.read_file(save_path)
-    
+
     # Collect columns that are in mapping.keys()
     attitudes_df = df[mapping.keys()]
     attitudes_df = attitudes_df.rename(columns=mapping)
     # Map Likert scale to numbers
     attitudes_df = attitudes_df.map(lambda x: likert_mapping[x])
-    
+
     # Add condition and participant ID
     attitudes_df.loc[:, 'condition'] = df.loc[:, 'CONDITION']
     attitudes_df.loc[:, 'participant_id'] = df.loc[:, 'PROLIFIC_PID']
-    
+
     if save_dir is not None:
         utils.write_file(attitudes_df, save_path, overwrite=overwrite)
-    
+
     return attitudes_df
 
 def dv_pointplot(dv_df,
-                 dv_labels,  
-                 color_idxs=[7, 1, 2, 4],   
+                 dv_labels,
+                 color_idxs=[7, 1, 2, 4],
                 #  letter_labels=True,
                  show=True,
                  save_dir=None,
@@ -2075,10 +2075,10 @@ def dv_pointplot(dv_df,
             ci_error = (ci[1] - ci[0]) / 2
             condition_means.append(mean)
             condition_errors.append(ci_error)
-        
+
         means.append(condition_means)
         errors.append(condition_errors)
-    
+
     # Graph
     fig, ax = visualizations.pointplot(
         means=means,
@@ -2137,7 +2137,7 @@ def dv_bargraph(dv_df,
         n_rows = 2
         n_cols = 3
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(8.5, 6.4))
-        
+
     for idx, (dv_name, dv_label) in enumerate(dv_labels.items()):
         if one_fig:
             ax_row = idx // n_cols
@@ -2149,7 +2149,7 @@ def dv_bargraph(dv_df,
         for condition in conditions:
             # Select rows for this condition and columns for this DV
             condition_df = dv_df[dv_df['condition'] == condition].loc[:, dv_name]
-            
+
             # Obtain mean and 95% CI
             mean = np.nanmean(condition_df.to_numpy())
             sem = stats.sem(condition_df, axis=None, nan_policy='omit')
@@ -2189,7 +2189,7 @@ def dv_bargraph(dv_df,
             fig_size = (4, 4.5)
             groups = conditions
             show = True
-            
+
         if not one_fig and (save_dir is not None or overwrite):
             save_path = os.path.join(save_dir, '{}_bargraph.{}'.format(dv_name, save_ext))
             utils.informal_log("Saving {} graph to {}".format(
@@ -2198,8 +2198,8 @@ def dv_bargraph(dv_df,
         else:
             save_path = None
 
-        
-    
+
+
         fig, ax = visualizations.bar_graph(
             fig=fig,
             ax=ax,
@@ -2235,24 +2235,24 @@ def dv_bargraph(dv_df,
         #         fig_size=fig_size,
         #         save_path=save_path,
         #         show=show
-                
+
         #     )
         # else:
         #     raise ValueError("plot_type '{}' not supported".format(plot_type))
         if one_fig:
             axes[ax_row][ax_col] = ax
-        
+
     if one_fig:
         fig.suptitle(
-            "Responses to Additional Dependent Variables Across Conditions", 
-            fontsize=16, 
+            "Responses to Additional Dependent Variables Across Conditions",
+            fontsize=16,
             x=0.5, y=1.05)
         fig.legend(
-            loc='lower center', 
-            ncol=4, 
+            loc='lower center',
+            ncol=4,
             fontsize=12,
             bbox_to_anchor=(0.5, -0.05))
-        
+
         # plt.tight_layout()
         fig.subplots_adjust(hspace=0.3, wspace=0.25)
 
@@ -2262,10 +2262,10 @@ def dv_bargraph(dv_df,
                 save_path
             ))
             plt.savefig(save_path, bbox_inches='tight')
-        
+
         plt.show()
-        
-        
+
+
 def save_r_format(attitudes_df,
                   columns,
                   save_dir,
@@ -2293,7 +2293,7 @@ def _get_leverage(X):
 	X: N x D np.array representing the design matrix.
 
 	Returns:
-	leverage : N-dim np.array 
+	leverage : N-dim np.array
 	"""
 
 	X = np.array(X) # Ensure X is a numpy array
@@ -2322,7 +2322,7 @@ def identify_outliers(rating_df,
         log_path = os.path.join(save_dir, 'log.txt')
     else:
         log_path = None
-    
+
     # Compute leverage
     rating_array = rating_df[rating_df.columns.intersection(items)].to_numpy()
     leverage = _get_leverage(rating_array)
@@ -2344,7 +2344,7 @@ def identify_outliers(rating_df,
             if not os.path.exists(outlier_save_path) or overwrite:
                 utils.write_file(outlier_df, outlier_save_path)
         return outlier_df
-    
+
 '''
 Mechanistic Conceptual Questions
 '''
@@ -2370,7 +2370,7 @@ def mechanistic_mcq_analysis(df,
         if os.path.exists(save_path) and not overwrite:
             utils.informal_log("MCQ accuracy CSV exists at {}".format(save_path))
             return utils.read_file(save_path)
-        
+
     mcq_response_df = df.loc[:, list(mcq_mapping.keys()) + ['CONDITION', 'PROLIFIC_PID']]
     mcq_response_df = mcq_response_df.rename(columns=mcq_mapping)
     # Only select rows in mechanistic condition
@@ -2378,7 +2378,7 @@ def mechanistic_mcq_analysis(df,
 
     n_rows = len(mcq_response_df)
     mcq_correct_df = {}
-    
+
     # Make DF for correct/incorrect
     for col, correct_response in mcq_correct_answers.items():
         correct = mcq_response_df[col] == correct_response
@@ -2406,10 +2406,10 @@ def mechanistic_mcq_analysis(df,
         title='Histogram of Mechanistic MCQ Performance ({} participants)'.format(n_rows),
         xlabel='Accuracy (%)',
         ylabel='Number of Participants')
-    
+
     if save_dir is not None:
         utils.write_file(mcq_correct_df, save_path, overwrite=overwrite)
-    
+
     return mcq_correct_df
 
 '''
@@ -2429,12 +2429,12 @@ Compute correlations
 #     '''
 
 #     assert len(dv1) == len(dv2)
-    
+
 #     if correlation_type == 'spearman':
 #         return stats.spearmanr(dv1, dv2)
 #     else:
 #         raise ValueError("Correlation type {} not supported".format(correlation_type))
-    
+
 def addit_dv_correlations(addit_dv_df,
                           rating_df,
                           addit_dv_list,
@@ -2445,7 +2445,7 @@ def addit_dv_correlations(addit_dv_df,
                           title=None,
                           save_dir=None,
                           overwrite=False):
-    
+
     if save_dir is not None:
         if mech_quiz_df is None:
             filename = 'correlations'
@@ -2455,7 +2455,7 @@ def addit_dv_correlations(addit_dv_df,
             filename = 'mech_correlations'
             # correlation_save_path = os.path.join(save_dir, 'mech_correlations.json')
             # correlation_vis_save_path = os.path.join(save_dir, 'mech_correlations.pdf')
-        
+
         # change name for scaled
         if min_max_scale:
             filename += '_scaled'
@@ -2467,7 +2467,7 @@ def addit_dv_correlations(addit_dv_df,
 
     # Get data from ratings (the group means)
     group_means = rating_df[rating_df.columns.intersection(group_col_names + ['participant_id'])]
-    
+
     # Get ratings from additional DVs
     corr_data = addit_dv_df[addit_dv_df.columns.intersection(addit_dv_list + ['participant_id'])]
 
@@ -2478,7 +2478,7 @@ def addit_dv_correlations(addit_dv_df,
     labels = addit_dv_list + group_col_names
 
     if mech_quiz_df is not None:
-        
+
         # Get mechanistic quiz performance
         mech_quiz_df = mech_quiz_df[['accuracy', 'PROLIFIC_PID']]
         mech_quiz_df = mech_quiz_df.rename({'PROLIFIC_PID': 'participant_id'}, axis=1)
@@ -2526,24 +2526,24 @@ def addit_dv_correlations(addit_dv_df,
     plt.figure(figsize=(8, 6))
     # Non significant correlations
     sns.heatmap(
-        corr_matrix, 
+        corr_matrix,
         mask=~is_significant,
         annot_kws={"weight": "bold"},
         vmin=0.0,
         vmax=1.0,
-        annot=True, 
-        cmap='coolwarm', 
-        fmt=".2f", 
+        annot=True,
+        cmap='coolwarm',
+        fmt=".2f",
         linewidths=.5)
     # Significant correlations
     sns.heatmap(
-        corr_matrix, 
+        corr_matrix,
         mask=is_significant,
         vmin=0.0,
         vmax=1.0,
-        annot=True, 
-        cmap='coolwarm', 
-        fmt=".2f", 
+        annot=True,
+        cmap='coolwarm',
+        fmt=".2f",
         linewidths=.5,
         xticklabels=labels,
         yticklabels=labels,
@@ -2582,16 +2582,16 @@ def _calculate_irr(rating_df,
     # Transpose rating_df such that the rows are items and the columns are each rater
     rating_array = rating_df.to_numpy()
     rating_array = rating_array.T
-    
+
     # Calculate Fleiss' Kappan d Krippendorff's Alpha across all ratings
     fleiss_array, fleiss_categories = irr.aggregate_raters(rating_array)
     fleiss_kappa = irr.fleiss_kappa(table=fleiss_array)
     kripps_alpha = krippendorffs_alpha(fleiss_array)
-    
+
     results = {
         'fleiss_kappa': fleiss_kappa,
         'krippendorffs_alpha': kripps_alpha}
-    
+
     return results
 
 def calculate_irr(rating_df,
@@ -2600,12 +2600,12 @@ def calculate_irr(rating_df,
                   groupings,
                   save_dir,
                   overwrite=True):
-    
+
     if save_dir is not None:
         save_path = os.path.join(save_dir, 'interrater.json')
         if os.path.exists(save_path) and not overwrite:
             return utils.read_file(save_path)
-        
+
     assert 'condition' in rating_df.columns
 
 
@@ -2634,7 +2634,7 @@ def calculate_irr(rating_df,
             for name, value in overall_results.items():
                 category_results['overall_{}'.format(name)] = value
             results[key] = category_results
-    
+
     # Calculate IRR across all categories
     all_category_results = {}
     for condition in conditions:
@@ -2657,7 +2657,7 @@ def calculate_irr(rating_df,
         utils.write_file(results, save_path, overwrite=overwrite)
 
     return results
-    
+
 def _calculate_iir(rating_df,
                    dv_items):
     '''
@@ -2672,14 +2672,14 @@ def _calculate_iir(rating_df,
     rating_df = rating_df[rating_df.columns.intersection(dv_items)]
     cronbachs_alpha = pg.cronbach_alpha(data=rating_df)
     return cronbachs_alpha
-    
+
 def calculate_iir(rating_df,
                   dv_itemss,
                   conditions,
                   save_dir,
                   overwrite=True):
     '''
-    Calculate inter ITEM reliability using Cronbach's alpha 
+    Calculate inter ITEM reliability using Cronbach's alpha
     for each list of dv items in dv_itemss and for all conditions (as well as overall)
 
     Arg(s):
@@ -2693,7 +2693,7 @@ def calculate_iir(rating_df,
         save_path = os.path.join(save_dir, 'interitem.json')
         if os.path.exists(save_path) and not overwrite:
             return utils.read_file(save_path)
-        
+
     results = {}
     for obj in dv_itemss:
         obj_results = {}
@@ -2718,7 +2718,7 @@ def calculate_iir(rating_df,
         alpha, ci = _calculate_iir(
             rating_df=rating_df,
             dv_items=dv_items)
-        
+
         obj_results['overall'] = {
             'cronbachs_alpha': float(alpha),
             'ci': ci.tolist()
@@ -2752,11 +2752,11 @@ Decomposition (NMF or Factor Loading)
 #     # print(np.mean(normalized_data))
 #     return normalized_data
 
-# def compute_factor_scores(responses, 
+# def compute_factor_scores(responses,
 #                           loadings,
 #                           return_predictions):
 #     '''
-#     Calculates factor scores based on Thurstone method 
+#     Calculates factor scores based on Thurstone method
 #         * https://personality-project.org/r/psych/help/factor.scores.html
 #         * https://pmc.ncbi.nlm.nih.gov/articles/PMC3773873/
 
@@ -2765,7 +2765,7 @@ Decomposition (NMF or Factor Loading)
 #         responses : n_items x n_participants
 #             UN-normalized responses, normalization will occur in this function
 #         loadings : n_items x n_factors
-        
+
 #     Returns:
 #         factor_scores : n_factors x n_participants
 #         predictions (opt) : n_items x n_participants
@@ -2777,7 +2777,7 @@ Decomposition (NMF or Factor Loading)
 #         utils.informal_log("Normalizing responses")
 #     else:
 #         utils.informal_log("Not normalizing responses")
-    
+
 #     # Calculate correlation coefficient
 #     lambda_ = np.corrcoef(responses, rowvar=True) # n_items x n_items
 #     lambda_inv = np.linalg.inv(lambda_)
@@ -2804,7 +2804,7 @@ Decomposition (NMF or Factor Loading)
 #         ratings : n_items x n_participants matrix
 #         n_components : int
 #         items : list[str]
-#         hparams : dict 
+#         hparams : dict
 #             Hyperparameters for NMF:
 #                 alpha_W : float (regularization on W)
 #                 alpha_H : float (regularization on H)
@@ -2834,7 +2834,7 @@ Decomposition (NMF or Factor Loading)
 #         utils.informal_log("Not normalizing responses")
 
 #     # FA vs NMF
-#     if mode == 'factor_analysis': 
+#     if mode == 'factor_analysis':
 #         decomposition_obj = FactorAnalysis(
 #             n_components=n_components,
 #             **hparams)
@@ -2857,11 +2857,11 @@ Decomposition (NMF or Factor Loading)
 #         data=loadings,
 #         columns=factors)
 #     # temp_df = factor_df.copy()
-    
+
 #     # Add columns for factor and the item
 #     factor_df['factor'] = factor_df.idxmax(axis=1)
 #     factor_df.insert(0, 'item', items)
-    
+
 #     # Get items that belong to each factor
 #     # factors = list(temp_df.columns)
 #     items = {}
@@ -2897,7 +2897,7 @@ Decomposition (NMF or Factor Loading)
 #         return loadings, factor_df, metrics, decomposition_obj
 #     else:
 #         return loadings, factor_df, metrics
-    
+
 # '''
 # Visualize factor loadings
 # '''
@@ -2914,7 +2914,7 @@ def assign_categories(df,
             not overwrite:
             utils.informal_log("Files exists in {}".format(save_dir))
             return utils.read_file(save_path), utils.read_file(dict_save_path)
-        
+
     items = df[item_colname]
     factor_df = df.drop(columns=item_colname)
     factor_df['factor'] = factor_df.idxmax(axis=1)
@@ -2928,7 +2928,7 @@ def assign_categories(df,
     if save_dir is not None:
         utils.write_file(factor_df, save_path, overwrite=overwrite)
         utils.write_file({'factor_analysis': groupings_dict}, dict_save_path, overwrite=overwrite)
-    return factor_df
+    return factor_df, groupings_dict
 
 def sort_by_loadings(loading_df,
                      factors,
@@ -2959,19 +2959,19 @@ def visualize_loadings(loading_df,
     if keep_columns is None:
         keep_columns = ['{}{}'.format(keepcol_name, i) for i in range(1, n_components + 1)]
 
-    # Reorder columns 
+    # Reorder columns
     loading_df = loading_df[keep_columns + ['item']]
 
     if item_order is None:
         # Sort by increasing loadings starting with F1 -> Fn
         loading_df = loading_df.sort_values(
-            by=keep_columns, 
+            by=keep_columns,
             axis=0,
             ascending=False)
-        
+
         yticklabels = loading_df[item_colname].to_list()
     else:
-        # Get order for items and sort DF by order 
+        # Get order for items and sort DF by order
         order_mapping = {item: rank for rank, item in enumerate(item_order)}
         loading_df['rank'] = loading_df[item_colname].map(order_mapping)
         loading_df = loading_df.sort_values('rank', ascending=False) #.drop(columns=['rank'])
@@ -2981,7 +2981,7 @@ def visualize_loadings(loading_df,
         # Get ytick labels based on order
         yticklabels = loading_df[item_colname].to_list()
     loading_data = loading_df[loading_df.columns.intersection(keep_columns)]
-    
+
     if orientation == 'vertical':
         plt.figure(figsize=(3, 12))
         sns.heatmap(
@@ -3002,7 +3002,7 @@ def visualize_loadings(loading_df,
             fmt=".2f")
         plt.xticks(rotation=45, ha='right')
         plt.yticks(rotation=0)
-    
+
     if save_dir is not None:
         if filename is None:
             filename = 'loadings_{}'.format(orientation)
@@ -3067,4 +3067,3 @@ def visualize_loadings(loading_df,
 #         'y_true': Y,
 #         'y_pred': predictions,
 #     }
-    

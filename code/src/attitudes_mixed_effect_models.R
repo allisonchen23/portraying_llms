@@ -12,11 +12,11 @@ attitude_analysis <- function(attitude,
   # Load data frame & column items
   df <- read.csv(df_path)
 
-  # Make file to save results 
+  # Make file to save results
   save_results_path <- sprintf("%s/%s_results.txt", save_dir, attitude)
 
-  # Convert condition to categorical factor
-  df$condition <- factor(df$condition, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
+  # Convert portrayal to categorical factor
+  df$portrayal <- factor(df$condition, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
 
   # Add column for participant ID
   df$pid <- paste0("pid", seq_len(nrow(df)))
@@ -28,7 +28,7 @@ attitude_analysis <- function(attitude,
   }
 
   # Fit a linear regression model
-  model <- lm(attitude ~ 1 + condition, data=df)
+  model <- lm(attitude ~ 1 + portrayal, data=df)
 
   cat("---***---","\n\n", attitude, "analysis: ", "\n")
   cat("\n\n", "Model Summary:", "\n")
@@ -38,9 +38,9 @@ attitude_analysis <- function(attitude,
   # This is the line that we would report values from
   cat("\n\n", "EMMeans Analysis:", "\n")
   # Estimated Marginal Means Model
-  print(emmeans(model, list(pairwise ~ condition), adjust = "tukey"))
+  print(emmeans(model, list(pairwise ~ portrayal), adjust = "tukey"))
 
-  # Baseline model without the condition
+  # Baseline model without the portrayal
   baseline_model <- lm(attitude ~ 1, data = df)
   cat("\n\n", "Anova Analysis:", "\n")
   print(anova(baseline_model, model))
@@ -66,8 +66,8 @@ attitude_analysis <- function(attitude,
 # # Load data frame & column items
 # df <- read.csv(df_path)
 
-# # Convert condition to categorical factor
-# df$condition <- factor(df$condition, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
+# # Convert portrayal to categorical factor
+# df$portrayal <- factor(df$portrayal, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
 
 # # Add column for participant ID
 # df$pid <- paste0("pid", seq_len(nrow(df)))
@@ -79,7 +79,7 @@ attitude_analysis <- function(attitude,
 # }
 
 # # Fit a linear regression model
-# model <- lm(attitude ~ 1 + condition, data=df)
+# model <- lm(attitude ~ 1 + portrayal, data=df)
 
 # cat("---***---","\n\n", attitude, "analysis: ", "\n")
 # cat("\n\n", "Model Summary:", "\n")
@@ -90,9 +90,9 @@ attitude_analysis <- function(attitude,
 # # This is the line that we would report values from
 # cat("\n\n", "EMMeans Analysis:", "\n")
 # # Estimated Marginal Means Model
-# emmeans(model, list(pairwise ~ condition), adjust = "tukey")
+# emmeans(model, list(pairwise ~ portrayal), adjust = "tukey")
 
-# # Baseline model without the condition
+# # Baseline model without the portrayal
 # baseline_model <- lm(attitude ~ 1, data=df)
 # cat("\n\n", "Anova Analysis:", "\n")
 # anova(baseline_model, model)
