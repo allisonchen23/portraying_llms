@@ -26,13 +26,55 @@ portraying_llms/
 |   └── files/ # Supplementary files to help with data processing
 ├── survey/Appendix.pdf # Information regarding survey questions, pilot study, and links to stimuli
 ```
+
 ## Reproducing Analyses
 
+### Prerequisites
+
+1. Install [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) if you haven't already
+2. Install [R](https://cran.r-project.org/) (version 4.4.2 or later recommended)
+
 ### Create Conda Environment
-If you do not have conda, install it following instructions on the [website](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
-In the terminal,
-1. Create a conda environment: `conda env create -f environment.yml`
-2. Activate the environment with `conda activate portrayingLLMs`
+
+1. Create a conda environment:
+```bash
+conda create -n portraying_llms python=3.9 -y
+```
+
+2. Activate the environment:
+```bash
+conda activate portraying_llms
+```
+
+### Install Python Dependencies
+
+Install the required Python packages:
+```bash
+pip install -r requirements.txt
+```
+
+### Install R Packages
+
+1. Create a file named `install_r_packages.R` with the following content:
+```R
+# Install required R packages
+install.packages(c(
+    "lmerTest",
+    "lme4",
+    "emmeans",
+    "ggplot2",
+    "dplyr",
+    "tidyr",
+    "stringr",
+    "psych",
+    "car"
+), repos="https://cloud.r-project.org")
+```
+
+2. Run the R script to install the packages:
+```bash
+Rscript install_r_packages.R
+```
 
 ### Running Analysis Code
 
