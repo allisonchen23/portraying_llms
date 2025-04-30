@@ -28,9 +28,9 @@ portraying_llms/
 ```
 
 The links to the video portrayals can be found in `survey/Appendix.pdf` and are included below for convenience:
-* [LLMs as Machines (mechanistic)][https://youtube.com/playlist?list=PLdFjRbvbdvc3frsh-UWPrK_26K5YVSHB5&si=dT0koer5QVO4Jx1q]
-* [LLMs as Tools (functional)][https://youtube.com/playlist?list=PLdFjRbvbdvc1wgwDhqVm1x7iicg_7bBgB&si=294TdggUhNgepjQ_]
-* [LLMs as Companions (intentional)][https://youtube.com/playlist?list=PLdFjRbvbdvc1p2aC6gUaCXAQzkphFARPo&si=3YqTaHb4W0Qo7Ah-]
+* [LLMs as Machines (mechanistic)](https://youtube.com/playlist?list=PLdFjRbvbdvc3frsh-UWPrK_26K5YVSHB5&si=dT0koer5QVO4Jx1q)
+* [LLMs as Tools (functional)](https://youtube.com/playlist?list=PLdFjRbvbdvc1wgwDhqVm1x7iicg_7bBgB&si=294TdggUhNgepjQ_)
+* [LLMs as Companions (intentional)](https://youtube.com/playlist?list=PLdFjRbvbdvc1p2aC6gUaCXAQzkphFARPo&si=3YqTaHb4W0Qo7Ah-)
   
 ## Reproducing Analyses
 
