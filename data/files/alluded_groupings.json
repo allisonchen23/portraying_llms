@@ -1,0 +1,48 @@
+{
+    "intentional": {
+        "unmentioned": [
+            "getting hungry",
+            "feeling embarrassed",
+            "feeling happy",
+            "perceiving depth",
+            "holding beliefs",
+            "imagining",
+            "considering choices",
+            "feeling tired",
+            "having desires",
+            "having free will",
+            "having intentions",
+            "experiencing pride",
+            "feeling love",
+            "paying attention",
+            "telling right from wrong",
+            "admiring someone",
+            "exercising self-restraint",
+            "feeling depressed",
+            "feeling calm",
+            "experiencing pleasure",
+            "reasoning about things",
+            "getting angry",
+            "doing computations",
+            "being conscious",
+            "seeing things",
+            "being self-aware",
+            "working toward a goal",
+            "experiencing joy",
+            "remembering things",
+            "detecting sounds",
+            "making choices",
+            "feeling disrespected",
+            "experiencing fear",
+            "recognizing someone",
+            "having thoughts"
+        ],
+        "mentioned": [
+            "communicating with others",
+            "having a personality",
+            "knowing things",
+            "having intelligence",
+            "understanding how others are feeling"
+        ]
+    }
+}

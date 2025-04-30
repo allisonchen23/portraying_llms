@@ -1,0 +1,50 @@
+{
+    "body-heart-mind": {
+        "body": [
+            "getting hungry",
+            "feeling tired",
+            "experiencing fear",
+            "experiencing pleasure",
+            "having free will",
+            "being conscious",
+            "having desires",
+            "feeling calm",
+            "getting angry",
+            "having intentions",
+            "feeling love",
+            "experiencing joy",
+            "having a personality",
+            "feeling happy",
+            "having thoughts"
+        ],
+        "heart": [
+            "being self-aware",
+            "feeling embarrassed",
+            "experiencing pride",
+            "holding beliefs",
+            "feeling disrespected",
+            "feeling depressed",
+            "understanding how others are feeling",
+            "telling right from wrong",
+            "exercising self-restraint",
+            "admiring someone",
+            "reasoning about things",
+            "doing computations"
+        ],
+        "mind": [
+            "remembering things",
+            "recognizing someone",
+            "communicating with others",
+            "seeing things",
+            "perceiving depth",
+            "working toward a goal",
+            "detecting sounds",
+            "making choices",
+            "considering choices",
+            "knowing things",
+            "having intelligence",
+            "paying attention",
+            "imagining"
+        ]
+    }
+}
