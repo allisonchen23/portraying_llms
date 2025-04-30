@@ -24,9 +24,14 @@ portraying_llms/
 ├── data/
 |   ├── raw/ # Raw data from Qualtrics, separated into baseline and experimental groups
 |   └── files/ # Supplementary files to help with data processing
-├── survey/Appendix.pdf # Information regarding survey questions, pilot study, and links to stimuli
+├── survey/Appendix.pdf # Information regarding survey questions, pilot study, and links to video stimuli
 ```
 
+The links to the video portrayals can be found in `survey/Appendix.pdf` and are included below for convenience:
+* [LLMs as Machines (mechanistic)][https://youtube.com/playlist?list=PLdFjRbvbdvc3frsh-UWPrK_26K5YVSHB5&si=dT0koer5QVO4Jx1q]
+* [LLMs as Tools (functional)][https://youtube.com/playlist?list=PLdFjRbvbdvc1wgwDhqVm1x7iicg_7bBgB&si=294TdggUhNgepjQ_]
+* [LLMs as Companions (intentional)][https://youtube.com/playlist?list=PLdFjRbvbdvc1p2aC6gUaCXAQzkphFARPo&si=3YqTaHb4W0Qo7Ah-]
+  
 ## Reproducing Analyses
 
 ### Prerequisites
