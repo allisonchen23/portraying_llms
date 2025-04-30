@@ -46,16 +46,9 @@ conda create -n portraying_llms python=3.9 -y
 conda activate portraying_llms
 ```
 
-### Install Python Dependencies
-
-Install the required Python packages:
-```bash
-pip install -r requirements.txt
-```
-
 ### Install R Packages
 
-1. Create a file named `install_r_packages.R` with the following content:
+1. We have created a file named `code/install_r_packages.R` with the following content:
 ```R
 # Install required R packages
 install.packages(c(
@@ -71,11 +64,20 @@ install.packages(c(
 ), repos="https://cloud.r-project.org")
 ```
 
-2. Run the R script to install the packages:
+2. Run the R script to install the packages (this may take ~5 minutes to run):
 ```bash
-Rscript install_r_packages.R
+Rscript code/install_r_packages.R
 ```
+
+### Install Python Dependencies
+
+Install the required Python packages:
+```bash
+pip install -r requirements.txt
+```
+
+Note: if you have issues downloading the package `rpy2`, remove it from the     `requirements.txt` file, run `pip install -r requirements.txt`, then manually install `rpy2` with the bash command ` pip install "rpy2==3.5.12`.
 
 ### Running Analysis Code
 
-The main analyses can be found in `code/analysis.ipynb`. Visualizations for graphs found in the paper can be produced using the `code/visualization_notebooks/figures.ipynb`. Trying to run `figure.ipynb` before `analysis.ipynb` will not work. Resulting analyses can be found in a new folder called `analysis`. It is recommended to sequentially run each cell in `analysis.ipynb` to ensure all variables are defined. Exploratory analyses are at the bottom of the file.
+The main analyses can be found in `code/analysis.ipynb`. Visualizations for graphs found in the paper can be produced using the `code/figures.ipynb`. Trying to run `figure.ipynb` before `analysis.ipynb` will not work. Resulting analyses can be found in a new folder called `analysis`. It is recommended to sequentially run each cell in `analysis.ipynb` to ensure all variables are defined. Exploratory analyses are at the bottom of the file.
