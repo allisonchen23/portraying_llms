@@ -255,11 +255,19 @@ def save_frq(df,
 
     frq_df = df.loc[:, [addit_q_id, 'PROLIFIC_PID', q_id]]
     frq_df = frq_df[~frq_df[q_id].isnull()]
-    for _, row in frq_df.iterrows():
-        utils.informal_log("{} [{}]: \n\t{}".format(
-            row['PROLIFIC_PID'], row[addit_q_id], row[q_id]
-        ), frq_save_path)
+    frq_responses = []
 
+    if print_responses:
+        utils.informal_log("Printing first 5 responses...")
+    for idx, row in frq_df.iterrows():
+        frq_responses.append("{} [{}]: \n\t{}".format(
+            row['PROLIFIC_PID'], row[addit_q_id], row[q_id]))
+        if print_responses and idx < 5:
+            utils.informal_log("{} [{}]: \n\t{}".format(
+                row['PROLIFIC_PID'], row[addit_q_id], row[q_id]
+            ))
+    utils.informal_log("\n Saving FRQ responses to {}".format(frq_save_path))
+    utils.write_file(frq_responses, frq_save_path)
     return frq_df
 
 
