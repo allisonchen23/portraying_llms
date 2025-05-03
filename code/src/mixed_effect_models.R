@@ -17,7 +17,7 @@ rating_analysis <- function(df_path,
     category <- sprintf("%d_components", n_components)
   }
   else {
-    category <- "body-heart-mind"
+    category <- "body-heart-mind" # Categories from Weisman (2017)
   }
   if (!is.null(save_dir)) {
     save_results_path <- sprintf("%s/%s_results.txt", save_dir, category)
@@ -32,10 +32,12 @@ rating_analysis <- function(df_path,
 
   # Convert portrayal to categorical factor
   df$portrayal <- factor(df$condition, levels=c("Baseline", "Mechanistic", "Functional", "Intentional"))
-  # Fit a mixed-effects regression model
+
   if (save_txt) {
     sink(file = save_results_path)
   }
+
+  # Fit a mixed-effects regression model
   model <- lmer(rating ~ portrayal * category + (1 | pid), data = df)
   cat("\n\n", "Model Summary:", "\n")
   print(summary(model))
@@ -61,6 +63,39 @@ rating_analysis <- function(df_path,
   # Nested model comparison
   cat("ANOVA with category model", "\n")
   print(anova(null_model, category_model, no_interaction_model, model))
+
+  # -------------------###-------------------
+  # Add column for aggregating video conditions
+  df <- df %>% mutate(video = case_when(
+    condition == "Baseline" ~ factor("No video"),
+    condition == "Mechanistic" ~ factor("Video"),
+    condition == "Functional" ~ factor("Video"),
+    condition == "Intentional" ~ factor("Video")))
+
+  cat("\n--------------###--------------\n", "EMMeans Analysis for video vs no video conditions:", "\n")
+  video_model <- lmer(rating ~ video * group + (1 | pid), data = df)
+  cat("\n\n", "Model Summary:", "\n")
+  print(summary(video_model))
+
+  cat("\n\n", "EMMeans Analysis for video:", "\n")
+  video_emm <- emmeans(video_model, list(pairwise ~ video), adjust = "tukey")
+  print(summary(video_emm))
+
+  cat("\n\n", "EMMeans Analysis for video marginalized by group:", "\n")
+  video_marg_emmeans <- emmeans(video_model, list(pairwise ~ video | group), adjust = "tukey")
+  print(summary(video_marg_emmeans))
+
+  # Baseline model without interaction
+  no_interaction_video_model <- lmer(rating ~ video + group + (1 | pid), data = df)
+
+  # Baseline model with group only
+  group_model <- lmer(rating ~ group + (1 | pid), data = df)
+
+  # Null model without the condition
+  null_model <- lmer(rating ~ (1 | pid), data = df)
+
+  cat("ANOVA with group model", "\n")
+  print(anova(null_model, group_model, no_interaction_video_model, video_model))
 
   if (save_txt) {
     sink(file = NULL)
