@@ -374,10 +374,10 @@ def perform_exclusions(df,
         utils.informal_log("No manual exclusions performed")
 
     utils.informal_log("Number of rows: {}".format(len(df)))
-    utils.informal_log("Number of rows in baseline: {}".format(len(df[df['CONDITION'] == 'Baseline'])))
-    utils.informal_log("Number of rows in mechanistic: {}".format(len(df[df['CONDITION'] == 'Mechanistic'])))
-    utils.informal_log("Number of rows in functional: {}".format(len(df[df['CONDITION'] == 'Functional'])))
-    utils.informal_log("Number of rows in intentional: {}".format(len(df[df['CONDITION'] == 'Intentional'])))
+    utils.informal_log("Number of rows in novideo (baseline): {}".format(len(df[df['CONDITION'] == 'Baseline'])))
+    utils.informal_log("Number of rows in machines: {}".format(len(df[df['CONDITION'] == 'Mechanistic'])))
+    utils.informal_log("Number of rows in tools: {}".format(len(df[df['CONDITION'] == 'Functional'])))
+    utils.informal_log("Number of rows in companions: {}".format(len(df[df['CONDITION'] == 'Intentional'])))
 
     return df
 
@@ -498,6 +498,14 @@ def get_ratings(df,
     # Save condition
     rating_df['condition'] = df['CONDITION']
 
+    # Rename Baseline > NoVideo; Mechanistic > Machines; Functional > Tools; Intentional > Companions
+    condition_mapping = {
+        'Baseline': 'NoVideo',
+        'Mechanistic': 'Machines',
+        'Functional': 'Tools',
+        'Intentional': 'Companions'
+    }
+    rating_df['condition'] = rating_df['condition'].map(condition_mapping)
     # Save participant ID
     rating_df['participant_id'] = df['PROLIFIC_PID']
 
@@ -507,10 +515,10 @@ def get_ratings(df,
     # Print stats of rating_df
     utils.informal_log("Rating DF stats:")
     utils.informal_log("Number of rows: {}".format(len(rating_df)))
-    utils.informal_log("Number of rows in baseline: {}".format(len(rating_df[rating_df['condition'] == 'Baseline'])))
-    utils.informal_log("Number of rows in mechanistic: {}".format(len(rating_df[rating_df['condition'] == 'Mechanistic'])))
-    utils.informal_log("Number of rows in functional: {}".format(len(rating_df[rating_df['condition'] == 'Functional'])))
-    utils.informal_log("Number of rows in intentional: {}".format(len(rating_df[rating_df['condition'] == 'Intentional'])))
+    utils.informal_log("Number of rows in baseline: {}".format(len(rating_df[rating_df['condition'] == 'NoVideo'])))
+    utils.informal_log("Number of rows in mechanistic: {}".format(len(rating_df[rating_df['condition'] == 'Machines'])))
+    utils.informal_log("Number of rows in functional: {}".format(len(rating_df[rating_df['condition'] == 'Tools'])))
+    utils.informal_log("Number of rows in intentional: {}".format(len(rating_df[rating_df['condition'] == 'Companions'])))
 
     return rating_df
 
@@ -557,6 +565,7 @@ def _mean_ratings(rating_df,
     return stats_df
 
 def mean_ratings(rating_df,
+                 conditions,
                  save_conditions=True,
                  save_dir=None,
                  overwrite=False):
@@ -575,7 +584,7 @@ def mean_ratings(rating_df,
 
     # Save separate CSVs for each condition
     if save_conditions:
-        for condition in ['Mechanistic', 'Functional', 'Intentional', 'Baseline']:
+        for condition in conditions:
             condition_df = rating_df[rating_df['condition'] == condition]
             condition_stats_df = _mean_ratings(
                 rating_df=condition_df,
@@ -720,7 +729,7 @@ Code for formatting data from EMMeans
 def read_emmeans_single_variable(results_path,
                                  grouping_source,
                                  variable_name='portrayal',
-                                 variable_values=['Baseline', 'Mechanistic', 'Functional', 'Intentional'],
+                                 variable_values=['NoVideo', 'Machines', 'Tools', 'Companions'],
                                  save_dir=None,
                                  overwrite=True):
     '''
@@ -813,7 +822,7 @@ def read_emmeans_single_variable(results_path,
 
 def read_emmeans_marginalized_result(results_path,
                                     grouping_source,
-                                    conditions=['Baseline', 'Mechanistic', 'Functional', 'Intentional'],
+                                    conditions=['NoVideo', 'Machines', 'Tools', 'Companions'],
                                     marginalized_var='item',
                                     marginalized_var_values=[],
                                     save_dir=None,
@@ -900,6 +909,7 @@ def read_emmeans_marginalized_result(results_path,
     # Get data in format needed for analysis.grouped_bar_graphs (dict with 'means', 'errors')
     means = []
     errors = []
+
     for condition in conditions:
         condition_means = []
         condition_errors = []
