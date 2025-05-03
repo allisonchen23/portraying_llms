@@ -215,6 +215,26 @@ attitude_analysis <- function(attitude,
   cat("\n\n", "Anova Analysis:", "\n")
   print(anova(baseline_model, model))
 
+  # Add video vs no video column in dataframe
+  df <- df %>%
+    mutate(video = case_when(
+      condition == "Baseline" ~ factor("No video"),
+      condition == "Mechanistic" ~ factor("Video"),
+      condition == "Functional" ~ factor("Video"),
+      condition == "Intentional" ~ factor("Video")))
+  cat("\n--------------###--------------\n",
+      "EMMeans Analysis for video vs no video conditions:", "\n")
+
+  video_model <- lm(attitude ~ 1 + video, data=df)
+  cat("\n\n", "Model Summary:", "\n")
+  print(summary(video_model))
+
+  cat("\n\n", "EMMeans Analysis for video:", "\n")
+  emm <- emmeans(video_model, list(pairwise ~ video), adjust = "tukey")
+  print(summary(emm))
+
+  cat("\n\n", "Anova Analysis for video:", "\n")
+  print(anova(baseline_model, video_model))
 
   # Redirect outputs back to console
   if (save_txt) {
