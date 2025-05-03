@@ -45,9 +45,30 @@ rating_analysis <- function(df_path,
   # Post-Hoc Tests
   # Estimated Marginal Means Model
   cat("\n\n", "EMMeans Analysis for portrayals:", "\n")
-  print(emmeans(model, list(pairwise ~ portrayal), adjust = "tukey"))
-  cat("\n\n", "EMMeans Analysis for portrayals marginalized over category:", "\n")
-  print(emmeans(model, list(pairwise ~ portrayal | category), adjust = "tukey"))
+  emm <-emmeans(model, list(pairwise ~ portrayal), adjust = "tukey")
+  print(summary(emm))
+  emm_means <- emm[[1]]
+
+  cat("\n", "Mean of baseline, machine, and tool portrayal conditions", "\n")
+  print(summary(contrast(emm_means, method = list("Non-companion aggregate" = c(
+    Baseline = 1/3,
+    Mechanistic = 1/3,
+    Functional = 1/3,
+    Intentional = 0
+  ))), infer = c(TRUE, FALSE)))
+
+  cat("\n\n", "EMMeans Analysis for portrayal marginalized over category:", "\n")
+  emm_marginalized <- emmeans(model, list(pairwise ~ portrayal | category), adjust = "tukey")
+  print(summary(emm_marginalized))
+
+  cat("\n", "Mean of baseline, machine, and tool portrayal conditions marginalized by category", "\n")
+  emm_marginalized_means <- emm_marginalized[[1]]
+  print(summary(contrast(emm_marginalized_means, method = list("Non-companion aggregate" = c(
+    Baseline = 1 / 3,
+    Mechanistic = 1 / 3,
+    Functional = 1 / 3,
+    Intentional = 0
+  )), by = "category"), infer = c(TRUE, FALSE)))
 
   # EMMeans for category
   cat("\n", "EMMeans for category", "\n")
@@ -72,8 +93,10 @@ rating_analysis <- function(df_path,
     condition == "Functional" ~ factor("Video"),
     condition == "Intentional" ~ factor("Video")))
 
-  cat("\n--------------###--------------\n", "EMMeans Analysis for video vs no video conditions:", "\n")
-  video_model <- lmer(rating ~ video * group + (1 | pid), data = df)
+  cat("\n--------------###--------------\n",
+      "EMMeans Analysis for video vs no video conditions:", "\n")
+
+  video_model <- lmer(rating ~ video * category + (1 | pid), data = df)
   cat("\n\n", "Model Summary:", "\n")
   print(summary(video_model))
 
@@ -81,21 +104,17 @@ rating_analysis <- function(df_path,
   video_emm <- emmeans(video_model, list(pairwise ~ video), adjust = "tukey")
   print(summary(video_emm))
 
-  cat("\n\n", "EMMeans Analysis for video marginalized by group:", "\n")
-  video_marg_emmeans <- emmeans(video_model, list(pairwise ~ video | group), adjust = "tukey")
-  print(summary(video_marg_emmeans))
-
   # Baseline model without interaction
-  no_interaction_video_model <- lmer(rating ~ video + group + (1 | pid), data = df)
+  no_interaction_video_model <- lmer(rating ~ video + category + (1 | pid), data = df)
 
-  # Baseline model with group only
-  group_model <- lmer(rating ~ group + (1 | pid), data = df)
+  # Baseline model with category only
+  category_model <- lmer(rating ~ category + (1 | pid), data = df)
 
   # Null model without the condition
   null_model <- lmer(rating ~ (1 | pid), data = df)
 
-  cat("ANOVA with group model", "\n")
-  print(anova(null_model, group_model, no_interaction_video_model, video_model))
+  cat("ANOVA with category model", "\n")
+  print(anova(null_model, category_model, no_interaction_video_model, video_model))
 
   if (save_txt) {
     sink(file = NULL)
@@ -196,6 +215,7 @@ attitude_analysis <- function(attitude,
   cat("\n\n", "Anova Analysis:", "\n")
   print(anova(baseline_model, model))
 
+
   # Redirect outputs back to console
   if (save_txt) {
     sink(file = NULL)
@@ -231,7 +251,10 @@ mentioned_items_analysis <- function(df_path,
   cat("\n\n", "EMMeans Analysis for portrayal:", "\n")
   print(emmeans(model, list(pairwise ~ portrayal), adjust = "tukey"))
   cat("\n\n", "EMMeans Analysis for portrayal marginalized over category:", "\n")
-  print(emmeans(model, list(pairwise ~ portrayal | category), adjust = "tukey"))
+  emm_marginalized <- emmeans(model, list(pairwise ~ portrayal | category), adjust = "tukey")
+  print(summary(emm_marginalized))
+
+
   # EMMeans for category
   cat("\n", "EMMeans for category", "\n")
   print(emmeans(model, list(pairwise ~ category), adjust = "tukey"))
