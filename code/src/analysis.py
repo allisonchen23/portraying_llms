@@ -900,6 +900,7 @@ def read_emmeans_marginalized_result(results_path,
     # Get data in format needed for analysis.grouped_bar_graphs (dict with 'means', 'errors')
     means = []
     errors = []
+
     for condition in conditions:
         condition_means = []
         condition_errors = []
