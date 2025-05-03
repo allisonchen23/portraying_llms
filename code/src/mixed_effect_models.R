@@ -256,7 +256,7 @@ mentioned_items_analysis <- function(df_path,
   df$category <- factor(df$category, levels = c("unmentioned", "mentioned"))
 
   # Select only baseline and intentional conditions
-  df <- df[df$portrayal %in% c("Baseline", "Intentional"), ]
+  # df <- df[df$portrayal %in% c("Baseline", "Intentional"), ]
 
   if (save_txt) {
     sink(file = save_results_path)
@@ -295,6 +295,32 @@ mentioned_items_analysis <- function(df_path,
 
   cat("ANOVA with category model", "\n")
   print(anova(null_model, category_model, no_interaction_model, model))
+
+  cat("\n--------------###--------------\n",
+    "Perform ANOVA only on items that were not mentioned", "\n")
+
+  unmentioned_df <- df[df$category == "unmentioned", ]
+  unmentioned_model <- lmer(rating ~ portrayal * item + (1 | pid), data = unmentioned_df)
+
+  # Baseline model without interaction
+  unmentioned_no_interaction_model <- lmer(rating ~ portrayal + item + (1 | pid), data = unmentioned_df)
+
+  # Baseline model with item only
+  unmentioned_item_model <- lmer(rating ~ item + (1 | pid), data = unmentioned_df)
+
+  # Baseline model with condition only
+  # unmentioned_condition_model <- lmer(rating ~ portrayal + (1 | pid), data = unmentioned_df)
+
+  # Null model without the condition
+  unmentioned_null_model <- lmer(rating ~ (1 | pid), data = unmentioned_df)
+
+  # Nested model comparison
+  cat("[Unmentioned] ANOVA with item model", "\n")
+  print(anova(unmentioned_null_model, unmentioned_item_model,
+    unmentioned_no_interaction_model, unmentioned_model))
+
+  cat("\n\n", "[Unmentioned] EMMeans Analysis for portrayal:", "\n")
+  print(emmeans(unmentioned_model, list(pairwise ~ portrayal), adjust = "tukey"))
 
   if (save_txt) {
     sink(file = NULL)
