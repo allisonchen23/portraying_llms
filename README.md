@@ -87,7 +87,7 @@ Install the required Python packages:
 pip install -r requirements.txt
 ```
 
-Note: if you have issues downloading the package `rpy2`, remove it from the     `requirements.txt` file, run `pip install -r requirements.txt`, then manually install `rpy2` with the bash command ` pip install "rpy2==3.5.12`.
+Note: if you have issues downloading the package `rpy2`, remove it from the     `requirements.txt` file, run `pip install -r requirements.txt`, then manually install `rpy2` with the bash command ` pip install "rpy2==3.5.12"`.
 
 ### Running Analysis Code
 
