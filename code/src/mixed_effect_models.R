@@ -283,8 +283,8 @@ attitude_analysis <- function(attitude,
 }
 
 mentioned_items_analysis <- function(df_path,
-                                     fa_df_path,
                                      save_dir,
+                                     fa_df_path = NULL,
                                      save_txt = TRUE) {
   # Load data frame & column items
   df <- read.csv(df_path)
@@ -301,42 +301,106 @@ mentioned_items_analysis <- function(df_path,
   }
 
   # Read fa_df_path & add column for factor groupings
-  fa_df <- read.csv(fa_df_path)
-  fa_df <- fa_df %>% rename(factor = category)
-  # Rename condition -> portrayal
-  names(fa_df)[names(fa_df) == "condition"] <- "portrayal"
-  # Add factor labels to main df
-  df <- left_join(df, fa_df, by = c("portrayal", "pid", "item", "rating"))
+  if (!is.null(fa_df_path)) {
+    fa_df <- read.csv(fa_df_path)
+    fa_df <- fa_df %>% rename(factor = category)
+    # Rename condition -> portrayal
+    names(fa_df)[names(fa_df) == "condition"] <- "portrayal"
+    # Add factor labels to main df
+    df <- left_join(df, fa_df, by = c("portrayal", "pid", "item", "rating"))
 
-  cat("\n--------------###--------------\n",
-    "Perform ANOVA only on items that were not mentioned", "\n")
+    cat("\n--------------###--------------\n",
+      "Perform ANOVA only on items that were not mentioned", "\n")
 
-  # Only keep items that were unmentioned
-  unmentioned_df <- df[df$category == "unmentioned", ]
+    # Only keep items that were unmentioned
+    unmentioned_df <- df[df$category == "unmentioned", ]
 
-  unmentioned_model <- lmer(rating ~ portrayal * factor + (1 | pid), data = unmentioned_df)
-  cat("\n", "Model Summary:", "\n")
-  print(summary(unmentioned_model))
+    unmentioned_model <- lmer(rating ~ portrayal * factor + (1 | pid), data = unmentioned_df)
+    cat("\n", "Model Summary:", "\n")
+    print(summary(unmentioned_model))
 
-  # Baseline model without interaction
-  unmentioned_no_interaction_model <- lmer(rating ~ portrayal + factor + (1 | pid), data = unmentioned_df)
+    # Baseline model without interaction
+    unmentioned_no_interaction_model <- lmer(rating ~ portrayal + factor + (1 | pid), data = unmentioned_df)
 
-  # Baseline model with item only
-  unmentioned_item_model <- lmer(rating ~ factor + (1 | pid), data = unmentioned_df)
+    # Baseline model with item only
+    unmentioned_factor_model <- lmer(rating ~ factor + (1 | pid), data = unmentioned_df)
 
-  # Baseline model with condition only
-  unmentioned_condition_model <- lmer(rating ~ portrayal + (1 | pid), data = unmentioned_df)
+    # Baseline model with condition only
+    unmentioned_condition_model <- lmer(rating ~ portrayal + (1 | pid), data = unmentioned_df)
 
-  # Null model without the condition
-  unmentioned_null_model <- lmer(rating ~ (1 | pid), data = unmentioned_df)
+    # Null model without the condition
+    unmentioned_null_model <- lmer(rating ~ (1 | pid), data = unmentioned_df)
 
-  # Nested model comparison
-  cat("\n[Unmentioned] ANOVA with item model", "\n")
-  print(anova(unmentioned_null_model, unmentioned_item_model,
-    unmentioned_no_interaction_model, unmentioned_model))
+    # Nested model comparison
+    cat("\n[Unmentioned] ANOVA with factor model", "\n")
+    print(anova(unmentioned_null_model, unmentioned_factor_model,
+      unmentioned_no_interaction_model, unmentioned_model))
 
-  cat("\n\n", "[Unmentioned] EMMeans Analysis for portrayal:", "\n")
-  print(emmeans(unmentioned_model, list(pairwise ~ portrayal), adjust = "tukey"))
+    cat("\n\n", "[Unmentioned] EMMeans Analysis for portrayal:", "\n")
+    print(emmeans(unmentioned_model, list(pairwise ~ portrayal), adjust = "tukey"))
+  } else {
+    cat("\n\n", "Using `mentioned` as a binary predictor", "\n")
+    # TODO: Add analysis with `mentioned` variable
+
+    df$group <- factor(df$category, levels = c("unmentioned", "mentioned"))
+    model <- lmer(rating ~ condition * group + (1 | pid), data = df)
+    cat("\n\n", "Model Summary:", "\n")
+    print(summary(model))
+
+    # Estimated Marginal Means Model
+    cat("\n\n", "EMMeans Analysis for conditions:", "\n")
+    print(emmeans(model, list(pairwise ~ condition), adjust = "tukey"))
+    cat("\n\n", "EMMeans Analysis for conditions marginalized over category:", "\n")
+    print(emmeans(model, list(pairwise ~ condition | group), adjust = "tukey"))
+    # EMMeans for group
+    cat("\n", "EMMeans for group", "\n")
+    print(emmeans(model, list(pairwise ~ group), adjust = "tukey"))
+    # EMMeans for interaction
+    cat("\n\n", "EMMeans Analysis for interaction:", "\n")
+    print(emmeans(model, list(pairwise ~ condition * group), adjust = "tukey"))
+
+    # Baseline model without interaction
+    no_interaction_model <- lmer(rating ~ condition + group + (1 | pid), data = df)
+
+    # Baseline model with group only
+    group_model <- lmer(rating ~ group + (1 | pid), data = df)
+
+    # Null model without the condition
+    null_model <- lmer(rating ~ (1 | pid), data = df)
+
+    # Nested model comparison
+
+    cat("ANOVA with group model", "\n")
+    print(anova(null_model, group_model, no_interaction_model, model))
+
+
+    # Repeat analysis with items directly save for the 5 mentioned items
+    # NOTE: This code is commented out because the results were not reported in any version.
+    # However, the methodology is similar to that of the unmentioned analysis in PNAS version.
+
+    # Only keep items that were unmentioned
+    # unmentioned_df <- df[df$category == "unmentioned", ]
+    # cat("\n\n", "Unmentioned Model Summary using item:", "\n")
+    # unmentioned_model <- lmer(rating ~ condition * item + (1 | pid), data = unmentioned_df)
+    # summary(unmentioned_model)
+
+    # # Baseline model without interaction
+    # unmentioned_no_interaction_model <- lmer(rating ~ condition + item + (1 | pid), data = unmentioned_df)
+
+    # # Baseline model with item only
+    # unmentioned_item_model <- lmer(rating ~ item + (1 | pid), data = unmentioned_df)
+
+    # # Baseline model with condition only
+    # unmentioned_condition_model <- lmer(rating ~ condition + (1 | pid), data = unmentioned_df)
+
+    # # Null model without the condition
+    # unmentioned_null_model <- lmer(rating ~ (1 | pid), data = unmentioned_df)
+
+    # # Nested model comparison
+    # cat("[Unmentioned] ANOVA with item model", "\n")
+    # anova(unmentioned_null_model, unmentioned_item_model, unmentioned_no_interaction_model, unmentioned_model)
+
+  }
 
   if (save_txt) {
     sink(file = NULL)
