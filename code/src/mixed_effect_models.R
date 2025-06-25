@@ -137,51 +137,51 @@ rating_analysis <- function(df_path,
   }
 }
 
-# item_level_rating_analysis <- function(df_path,
-#                                        save_dir,
-#                                        save_txt = TRUE,
-#                                        overwrite = FALSE) {
-#   if (!is.null(save_dir)) {
-#     save_results_path <- sprintf("%s/results.txt", save_dir)
-#     if (file.exists(save_results_path) && !overwrite) {
-#       print(sprintf("File exists at %s and not overwriting.", save_results_path))
-#       return()
-#     }
-#     cat("Saving results to", save_results_path, "\n")
-#   }
-#   df <- read.csv(df_path)
-#   # cols <- unique(df$item)
+item_level_rating_analysis <- function(df_path,
+                                       save_dir,
+                                       save_txt = TRUE,
+                                       overwrite = FALSE) {
+  if (!is.null(save_dir)) {
+    save_results_path <- sprintf("%s/results.txt", save_dir)
+    if (file.exists(save_results_path) && !overwrite) {
+      print(sprintf("File exists at %s and not overwriting.", save_results_path))
+      return()
+    }
+    cat("Saving results to", save_results_path, "\n")
+  }
+  df <- read.csv(df_path)
+  # cols <- unique(df$item)
 
-#   # Convert condition to categorical factor called portrayal
-#   df$portrayal <- factor(df$condition, levels=c("NoVideo", "Machines", "Tools", "Companions"))
+  # Convert condition to categorical factor called portrayal
+  df$portrayal <- factor(df$condition, levels=c("NoVideo", "Machines", "Tools", "Companions"))
 
-#   if (save_txt) {
-#     sink(file = save_results_path)
-#   }
+  if (save_txt) {
+    sink(file = save_results_path)
+  }
 
-#   # Create model using just item and portrayal
-#   model <- lmer(rating ~ portrayal * item + (1 | pid), data = df)
-#   cat("\n\n", "Model Summary:", "\n")
-#   print(summary(model))
+  # Create model using just item and portrayal
+  model <- lmer(rating ~ portrayal * item + (1 | pid), data = df)
+  cat("\n\n", "Model Summary:", "\n")
+  print(summary(model))
 
-#   # Post-Hoc Tests
-#   cat("\n\n", "EMMeans Analysis for portrayal:", "\n")
-#   print(emmeans(model, list(pairwise ~ portrayal), adjust = "tukey"))
-#   cat("\n\n", "EMMeans Analysis for portrayal marginalized over item:", "\n")
-#   print(emmeans(model, list(pairwise ~ portrayal | item), adjust = "tukey"))
+  # Post-Hoc Tests
+  cat("\n\n", "EMMeans Analysis for portrayal:", "\n")
+  print(emmeans(model, list(pairwise ~ portrayal), adjust = "tukey"))
+  cat("\n\n", "EMMeans Analysis for portrayal marginalized over item:", "\n")
+  print(emmeans(model, list(pairwise ~ portrayal | item), adjust = "tukey"))
 
-#   # Baseline models
-#   no_interaction_model <- lmer(rating ~ portrayal + item + (1 | pid), data = df)
-#   no_item_model <- lmer(rating ~ portrayal + (1 | pid), data = df)
-#   null_model <- lmer(rating ~ (1 | pid), data=df)
-#   cat("ANOVA null -> no interaction -> interaction", "\n")
-#   print(anova(null_model, no_item_model, no_interaction_model, model))
+  # Baseline models
+  no_interaction_model <- lmer(rating ~ portrayal + item + (1 | pid), data = df)
+  no_item_model <- lmer(rating ~ portrayal + (1 | pid), data = df)
+  null_model <- lmer(rating ~ (1 | pid), data=df)
+  cat("ANOVA null -> no interaction -> interaction", "\n")
+  print(anova(null_model, no_item_model, no_interaction_model, model))
 
-#   # Redirect outputs back to console
-#   if (save_txt) {
-#     sink(file = NULL)
-#   }
-# }
+  # Redirect outputs back to console
+  if (save_txt) {
+    sink(file = NULL)
+  }
+}
 
 attitude_analysis <- function(attitude,
                               df_path,
@@ -343,24 +343,24 @@ mentioned_items_analysis <- function(df_path,
     # TODO: Add analysis with `mentioned` variable
 
     df$group <- factor(df$category, levels = c("unmentioned", "mentioned"))
-    model <- lmer(rating ~ condition * group + (1 | pid), data = df)
+    model <- lmer(rating ~ portrayal * group + (1 | pid), data = df)
     cat("\n\n", "Model Summary:", "\n")
     print(summary(model))
 
     # Estimated Marginal Means Model
     cat("\n\n", "EMMeans Analysis for conditions:", "\n")
-    print(emmeans(model, list(pairwise ~ condition), adjust = "tukey"))
+    print(emmeans(model, list(pairwise ~ portrayal), adjust = "tukey"))
     cat("\n\n", "EMMeans Analysis for conditions marginalized over category:", "\n")
-    print(emmeans(model, list(pairwise ~ condition | group), adjust = "tukey"))
+    print(emmeans(model, list(pairwise ~ portrayal | group), adjust = "tukey"))
     # EMMeans for group
     cat("\n", "EMMeans for group", "\n")
     print(emmeans(model, list(pairwise ~ group), adjust = "tukey"))
     # EMMeans for interaction
     cat("\n\n", "EMMeans Analysis for interaction:", "\n")
-    print(emmeans(model, list(pairwise ~ condition * group), adjust = "tukey"))
+    print(emmeans(model, list(pairwise ~ portrayal * group), adjust = "tukey"))
 
     # Baseline model without interaction
-    no_interaction_model <- lmer(rating ~ condition + group + (1 | pid), data = df)
+    no_interaction_model <- lmer(rating ~ portrayal + group + (1 | pid), data = df)
 
     # Baseline model with group only
     group_model <- lmer(rating ~ group + (1 | pid), data = df)

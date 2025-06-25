@@ -840,7 +840,6 @@ def read_emmeans_marginalized_result(results_path,
         save_dir : str
         overwrite : bool
     '''
-
     # Manually set groups
     if marginalized_var_values is None or len(marginalized_var_values) == 0:
         raise ValueError("No value passed for marginalized_var_values")
@@ -865,6 +864,8 @@ def read_emmeans_marginalized_result(results_path,
         if os.path.exists(csv_save_path) and not overwrite:
             df = utils.read_file(csv_save_path)
     results_list = utils.read_file(results_path)
+    print(results_path)
+    print(len(results_list))
     line_idx_dict = dict(zip(results_list, range(len(results_list))))
 
     if df is None:
@@ -932,6 +933,7 @@ def read_emmeans_marginalized_result(results_path,
     }
     # Get group means
     if marginalized_var == 'group':
+        print(results_list[125:130])
         group_emmeans_start_idx = line_idx_dict['$`emmeans of group`'] + 2 # Skip the header
         group_emmeans_list = results_list[group_emmeans_start_idx:group_emmeans_start_idx + len(marginalized_var_values)]
 
@@ -1603,6 +1605,7 @@ def overall_pointplot(r_results_path,
                       marker_size=6,
                       spacing_multiplier=0.1,
                       label=True,
+                      xlim=None,
                       show_xlabel=True,
                       show_ylabel=True,
                       show_legend=False,
@@ -1665,7 +1668,8 @@ def overall_pointplot(r_results_path,
         else:
             ylabel = None
         fig_size = (2, 4)
-        xlim = (-1, 1)
+        if xlim is None:
+            xlim = (-1, 1)
 
     # Label conditions
     if label:
