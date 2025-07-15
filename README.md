@@ -48,8 +48,7 @@ The links to the video portrayals can be found in `survey/Appendix.pdf` and are 
 
 ### Prerequisites
 
-1. Install [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) if you haven't already
-2. Install [R](https://cran.r-project.org/) (version 4.4.2 or later recommended)
+Install [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) if you haven't already
 
 ### Create Conda Environment
 
@@ -64,27 +63,9 @@ conda activate portraying_llms
 ```
 
 ### Install R Packages
+With the conda environment activated, install `R` and necessary packages in the conda environment with `conda install -c conda-forge r-base r-lme4 r-lmerTest r-emmeans r-ggplot2 r-dplyr r-tidyr r-stringr r-psych r-car`.
 
-1. We have created a file named `code/install_r_packages.R` with the following content:
-```R
-# Install required R packages
-install.packages(c(
-    "lmerTest",
-    "lme4",
-    "emmeans",
-    "ggplot2",
-    "dplyr",
-    "tidyr",
-    "stringr",
-    "psych",
-    "car"
-), repos="https://cloud.r-project.org")
-```
-
-2. Run the R script to install the packages (this may take ~5 minutes to run):
-```bash
-Rscript code/install_r_packages.R
-```
+Note: if there are other packages you would like to install, you can do so using the command `conda install -c conda-forge <package-name>` ensuring that the `r-` prepends each package name.
 
 ### Install Python Dependencies
 
