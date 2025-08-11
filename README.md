@@ -1,16 +1,18 @@
-# Portraying Large Language Models as Machines, Tools, or Companions Affects What Mental Capacities Humans Attribute to Them
+# Portraying Large Language Models as Companions Affects What Mental Capacities People Attribute to Them
 
-Allison Chen<sup>1</sup>, Sunnie S. Y. Kim<sup>1</sup>, Amaya Dharmasiri<sup>1</sup>, Olga Russakovsky<sup>1</sup>, Judith E. Fan<sup>2</sup>
+Allison Chen<sup>1</sup>, Sunnie S. Y. Kim<sup>1, 3</sup>, Amaya Dharmasiri<sup>1</sup>, Olga Russakovsky<sup>1</sup>, Judith E. Fan<sup>2</sup>
 
 <sup>1</sup> Department of Computer Science, Princeton University
 
 <sup>2</sup> Department of Psychology, Stanford University
 
+<sup>3</sup> Currently at Apple
+
 ![Teaser photo of experimental setup. Participants are assigned to one of four conditions where they watch videos portraying LLMs as machines, tools, or companions, or watch no video. Then all participants take the same mental capacity attribution survey](./teaser.png)
 
 ## Abstract
 
-How do people determine whether non-human entities have thoughts and feelings — an inner mental life? Prior work has proposed that people use compact sets of dimensions (e.g.,body-heart-mind) to form beliefs about familiar kinds, but how do they generalize to novel entities? Here we investigate emerging beliefs about the mental capacities of large language models (LLMs) and how those beliefs are shaped by how LLMs are portrayed. Participants (N = 470) watched brief videos that encouraged them to view LLMs as either machines, tools, or companions. We found that the companion group more strongly endorsed statements regarding a broad array of mental capacities that LLMs might possess relative to the machine and tool groups, suggesting that people’s beliefs can be rapidly shaped by context. Our study highlights the need to explore the factors shaping people’s beliefs about emerging technologies to promote accurate public understanding.
+Large language models (LLMs) exhibit a wide range of capabilities. Various stakeholders are thus promoting their use to achieve different ends, including to enhance workplace productivity, accelerate scientific discovery, and provide companionship. How do these different narratives about LLMs influence the beliefs that people have about these models' latent capacities? We conducted a behavioral experiment (N=470 participants) to investigate how brief exposure to different narratives about LLMs may influence people's beliefs. Participants were randomly assigned to watch one of three short informational videos, or to watch no video. One video described LLMs' internal mechanisms (machine); another focused on how to use LLMs to complete tasks (tool); the third suggested that LLMs could serve as social partners (companion). All participants then completed a survey assessing how strongly they believe LLMs to possess 40 mental capacities, such as the ability to understand how others are feeling, remember things, or feel tired. We found that participants who watched the companion video reported believing that LLMs more fully possess these capacities than did participants in other groups. These findings highlight the important role that informational media can play in shaping people's beliefs about the nature of LLMs, with broader implications for how people use this technology.
 
 This study was [pre-registered](https://aspredicted.org/vgdm-gjrm.pdf) with AsPredicted and approved by IRB at Princeton University (#17151).
 
